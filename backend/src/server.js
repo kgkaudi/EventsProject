@@ -1,5 +1,6 @@
 import express from "express";
 import eventsRoutes from "./routes/eventsRoutes.js"
+import usersRoutes from "./routes/usersRoutes.js"
 import { connectDB } from "./config/db.js";
 import dotenv from "dotenv";
 import rateLimiter from "./middleware/rateLimiter.js";
@@ -23,6 +24,7 @@ app.use((req,res,next)=>{
 
 //Routes
 app.use("/api/events", eventsRoutes);
+app.use("/api/users", usersRoutes);
 
 connectDB().then(()=> {
     app.listen(PORT, () => {
