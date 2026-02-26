@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import api from "../lib/axios";
+import { formatLocalDateTime } from "../lib/utils";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon, LoaderIcon, Trash2Icon } from "lucide-react";
 
@@ -44,8 +45,8 @@ const EventDetailPage = () => {
   };
 
   const handleSave = async () => {
-    if (!event.title.trim() || !event.content.trim() || !event.date.trim()) {
-      toast.error("Please add a title, content or date");
+    if (!event.title.trim() || !event.content.trim() || !event.location.trim() || !event.date.trim()) {    
+      toast.error("Please add a title, content, location, maximum capacity or date");
       return;
     }
 
@@ -70,6 +71,7 @@ const EventDetailPage = () => {
       </div>
     );
   }
+  const eventDate = formatLocalDateTime(event.date);
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -115,15 +117,40 @@ const EventDetailPage = () => {
 
               <div className="form-control mb-4">
                 <label className="label">
-                  <span className="label-text">Date</span>
+                  <span className="label-text">Location</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="Event date"
+                  placeholder="Write your location here..."
                   className="input input-bordered"
-                  value={event.date}
-                  onChange={(e) => setEvent({ ...event, date: e.target.value })}
+                  value={event.location}
+                  onChange={(e) => setEvent({ ...event, location: e.target.value })}
                 />
+              </div>
+
+              <div className="form-control mb-4">
+                <label className="label">
+                  <span className="label-text">Maximum Capacity</span>
+                </label>
+                <input
+                  type="number"
+                  placeholder="Write your max capacity here..."
+                  className="input input-bordered"
+                  value={event.maxcapacity}
+                  onChange={(e) => setEvent({ ...event, maxcapacity: e.target.value })}
+                />
+              </div>
+
+              <div className="form-control mb-4">
+                <label className="label">
+                  <span className="label-text">Date: {eventDate}</span>
+                </label>
+                 <input
+                    type="datetime-local"
+                    value={event.date}
+                    className="input input-bordered"
+                    onChange={(e) => setEvent({ ...event, date: e.target.value })}
+                  />
               </div>
 
               <div className="card-actions justify-end">

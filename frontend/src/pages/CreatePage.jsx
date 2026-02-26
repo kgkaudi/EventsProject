@@ -7,15 +7,28 @@ import api from "../lib/axios";
 const CreatePage = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [location, setLocation] = useState("");
+  const [maxcapacity, setMaxcapacity] = useState("");
   const [date, setDate] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  const handleDateChange = (e) => {
+    const raw = e.target.value;
+    if (!raw) {
+      setDate("");
+      return;
+    }
+
+    const formatted = raw.replace("T", " ") + ":00";
+    setDate(formatted);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!title.trim() || !content.trim() || !date.trim()) {
+    if (!title.trim() || !content.trim() || !location.trim() || !date.trim()) {
       toast.error("All fields are required");
       return;
     }
@@ -25,6 +38,8 @@ const CreatePage = () => {
       await api.post("/events", {
         title,
         content,
+        location,
+        maxcapacity,
         date,
       });
 
@@ -85,14 +100,39 @@ const CreatePage = () => {
 
                 <div className="form-control mb-4">
                   <label className="label">
-                    <span className="label-text">Date</span>
+                    <span className="label-text">Location</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="Event Date"
+                    placeholder="Write your event here..."
+                    className="input input-bordered"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-control mb-4">
+                  <label className="label">
+                    <span className="label-text">Maximum Capacity</span>
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Write your max capacity here..."
+                    className="input input-bordered"
+                    value={maxcapacity}
+                    onChange={(e) => setMaxcapacity(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-control mb-4">
+                  <label className="label">
+                    <span className="label-text">Date</span>
+                  </label>
+                  <input
+                    type="datetime-local"
                     className="input input-bordered"
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    onChange={handleDateChange}
                   />
                 </div>
 

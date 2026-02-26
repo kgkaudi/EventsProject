@@ -1,6 +1,6 @@
 import { PenSquareIcon, Trash2Icon } from "lucide-react";
 import { Link } from "react-router";
-import { formatDate } from "../lib/utils";
+import { formatDate, formatLocalDateTime } from "../lib/utils";
 import api from "../lib/axios";
 import toast from "react-hot-toast";
 
@@ -29,7 +29,9 @@ const EventCard = ({ event, setEvents }) => {
       <div className="card-body">
         <h3 className="card-title text-base-content">{event.title}</h3>
         <p className="text-base-content/70 line-clamp-3">{event.content}</p>
-        <p className="text-base-content/70 line-clamp-3">Date: {event.date}</p>
+        <p className="text-base-content/70 line-clamp-3">Location: {event.location}</p>
+        <p className="text-base-content/70 line-clamp-3">Max Capacity: {event.maxcapacity ?? "-"}</p>
+        <p className="text-base-content/70 line-clamp-3">Date: {formatLocalDateTime(event.date)}</p>
         <div className="card-actions justify-between items-center mt-4">
           <span className="text-sm text-base-content/60">
             Created At: {formatDate(new Date(event.createdAt))}

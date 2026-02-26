@@ -12,10 +12,3 @@ router.delete("/:id", deleteEvent)
 
 
 export default router;
-
-
-
-
-
-
-
