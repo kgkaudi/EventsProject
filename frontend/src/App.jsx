@@ -5,6 +5,8 @@ import {Route, Routes} from "react-router";
 import { HomePage } from "./pages/HomePage";
 import CreatePage from "./pages/CreatePage.jsx";
 import EventDetailPage from "./pages/EventDetailPage";
+import SignupPage from './pages/SignupPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
 
 const App = () => {
   return (
@@ -14,6 +16,8 @@ const App = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/create" element={<CreatePage/>} />
         <Route path="/event/:id" element={<EventDetailPage/>} />
+        <Route path="/login" element={<LoginPage/>} />
+        <Route path="/signup" element={<SignupPage/>} />
       </Routes>
     </div>
   )

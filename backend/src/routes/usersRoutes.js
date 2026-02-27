@@ -4,7 +4,7 @@ import { signupUser, deleteUser, loginUser, getUser, updateUser } from "../contr
 const router = express.Router();
 
 //events routes
-router.get("/login", loginUser);
+router.post("/login", loginUser);
 router.get("/login/:id", getUser)
 router.post("/signup", signupUser);
 router.put("/signup/:id", updateUser)

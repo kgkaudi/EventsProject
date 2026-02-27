@@ -2,9 +2,11 @@ import { PenSquareIcon, Trash2Icon } from "lucide-react";
 import { Link } from "react-router";
 import { formatDate, formatLocalDateTime } from "../lib/utils";
 import api from "../lib/axios";
+import { useAuthContext } from '../hooks/useAuthContext'
 import toast from "react-hot-toast";
 
 const EventCard = ({ event, setEvents }) => {
+  const { user } = useAuthContext()
   const handleDelete = async (e, id) => {
     e.preventDefault(); // get rid of the navigation behaviour
 
@@ -36,15 +38,18 @@ const EventCard = ({ event, setEvents }) => {
           <span className="text-sm text-base-content/60">
             Created At: {formatDate(new Date(event.createdAt))}
           </span>
-          <div className="flex items-center gap-1">
-            <PenSquareIcon className="size-4" />
-            <button
-              className="btn btn-ghost btn-xs text-error"
-              onClick={(e) => handleDelete(e, event._id)}
-            >
-              <Trash2Icon className="size-4" />
-            </button>
-          </div>
+          {user && (
+            <div className="flex items-center gap-1">
+              <PenSquareIcon className="size-4" />
+              <button
+                className="btn btn-ghost btn-xs text-error"
+                onClick={(e) => handleDelete(e, event._id)}
+              >
+                <Trash2Icon className="size-4" />
+              </button>
+            </div>
+          )}
+          
         </div>
       </div>
     </Link>
