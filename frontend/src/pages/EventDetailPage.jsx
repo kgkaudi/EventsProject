@@ -209,6 +209,12 @@ const EventDetailPage = () => {
                   )}
               </div>
 
+              <div className="form-control mb-4">
+                <label className="label">
+                  <span className="label-text">Created By: {event.createdBy}</span>
+                </label>
+              </div>
+                
               {user && (
                 <div className="card-actions justify-end">
                   <button className="btn btn-primary" disabled={saving} onClick={handleSave}>

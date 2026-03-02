@@ -1,4 +1,5 @@
 import Event from "../models/Event.js"
+import User from "../models/User.js"
 
 export async function getAllEvents(req,res) {
     //send events
@@ -14,8 +15,13 @@ export async function getAllEvents(req,res) {
 export async function createEvent(req,res) {
     //create events
     try {
+        const user_id = req.user._id;
+        const user = await User.findById(user_id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        const createdBy = user.name;
+        
         const {title,content,location,maxcapacity,date} = req.body;
-        const newEvent = new Event({title, content, location, maxcapacity, date});
+        const newEvent = new Event({title, content, location, maxcapacity, date, createdBy});
 
         await newEvent.save();
         res.status(201).json({meassage:"Your event was created successfully"});
