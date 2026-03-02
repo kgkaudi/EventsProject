@@ -2,7 +2,7 @@ import { ArrowLeftIcon } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router";
-import api from "../lib/axios";
+import { BASE_URL } from "../lib/axios";
 import { useAuthContext } from "../hooks/useAuthContext";
 
 const LoginPage = () => {
@@ -25,7 +25,7 @@ const LoginPage = () => {
     setLoading(true);
     setError(null)
 
-    const response = await fetch("http://localhost:5001/api/users/login", {
+    const response = await fetch(`${BASE_URL}/users/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password})
