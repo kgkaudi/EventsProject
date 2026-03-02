@@ -10,12 +10,14 @@ export async function loginUser(req,res) {
     
     try{
         const user = await User.login(email,password)
-        const name = user.name
-        const role = user.role
         //create a token
         const token = createToken(user._id)
 
-        res.status(200).json({email,name,role,token});
+        res.status(200).json({
+            email: email,
+            name: user.name,
+            role: user.role,
+            token: token});
     } catch (error) {
         res.status(500).json({error: error.message});
     }    
