@@ -36,13 +36,24 @@ const EventDetailPage = () => {
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this event?")) return;
 
+    const user = JSON.parse(localStorage.getItem("user"));
+
     try {
-      await api.delete(`/events/${id}`);
+      await api.delete(`/events/${id}`, {
+      headers: {
+        Authorization: `Bearer ${user?.token}`,
+      },});
       toast.success("Event deleted");
       navigate("/");
     } catch (error) {
       console.log("Error deleting the event:", error);
-      toast.error("Failed to delete event");
+      if (error.response?.status === 401) {
+        toast.error("Unauthorized. Please login again.");
+      } else if (error.response?.status === 403) {
+        toast.error("You do not have permission to delete this event.");
+      } else {
+        toast.error("Failed to delete event");
+      }
     }
   };
 
@@ -52,15 +63,26 @@ const EventDetailPage = () => {
       return;
     }
 
+    const user = JSON.parse(localStorage.getItem("user"));
+
     setSaving(true);
 
     try {
-      await api.put(`/events/${id}`, event);
+      await api.put(`/events/${id}`, event,
+      {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
       toast.success("Event updated successfully");
       navigate("/");
     } catch (error) {
       console.log("Error saving the event:", error);
-      toast.error("Failed to update event");
+      if (error.response?.status === 401) {
+        toast.error("Unauthorized. Please login again.");
+      } else {
+        toast.error("Failed to update event");
+      }
     } finally {
       setSaving(false);
     }

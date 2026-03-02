@@ -33,6 +33,8 @@ const CreatePage = () => {
       return;
     }
 
+    const user = JSON.parse(localStorage.getItem("user"));
+
     setLoading(true);
     try {
       await api.post("/events", {
@@ -41,13 +43,23 @@ const CreatePage = () => {
         location,
         maxcapacity,
         date,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
       });
 
       toast.success("Event created successfully!");
       navigate("/");
     } catch (error) {
       console.log("Error creating event", error);
-      if (error.response.status === 429) {
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.", {
+          duration: 4000,
+          icon: "💀",
+        });
+      } else if (error.response?.status === 429) {
         toast.error("Slow down! You're creating events too fast", {
           duration: 4000,
           icon: "💀",
