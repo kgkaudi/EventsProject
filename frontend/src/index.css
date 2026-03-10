@@ -16,3 +16,7 @@
 .link-btn{
     margin: 10px;
 }
+
+.user-card-role{
+    text-transform: capitalize
+}

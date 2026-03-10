@@ -6,6 +6,7 @@ import { useAuthContext } from './hooks/useAuthContext.jsx';
 import { HomePage } from "./pages/HomePage";
 import CreatePage from "./pages/CreatePage.jsx";
 import EventDetailPage from "./pages/EventDetailPage";
+import UserDetailPage from "./pages/UserDetailPage.jsx";
 import SignupPage from './pages/SignupPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import { UsersPage } from './pages/UsersPage.jsx';
@@ -22,6 +23,7 @@ const App = () => {
         <Route path="/login" element={!user? <LoginPage/> : <Navigate to="/" />} />
         <Route path="/signup" element={!user? <SignupPage/> : <Navigate to="/" />} />
         <Route path="/users" element={user && user.role === "admin" ? <UsersPage /> : <Navigate to="/" />}/>
+        <Route path="/user/:id" element={user && user.role === "admin" ? <UserDetailPage /> : <Navigate to="/" />}/>
       </Routes>
     </div>
   )
