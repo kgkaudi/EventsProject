@@ -8,6 +8,7 @@ import CreatePage from "./pages/CreatePage.jsx";
 import EventDetailPage from "./pages/EventDetailPage";
 import SignupPage from './pages/SignupPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import { UsersPage } from './pages/UsersPage.jsx';
 
 const App = () => {
   const { user } = useAuthContext()
@@ -20,6 +21,7 @@ const App = () => {
         <Route path="/event/:id" element={<EventDetailPage/>} />
         <Route path="/login" element={!user? <LoginPage/> : <Navigate to="/" />} />
         <Route path="/signup" element={!user? <SignupPage/> : <Navigate to="/" />} />
+        <Route path="/users" element={user && user.role === "admin" ? <UsersPage /> : <Navigate to="/" />}/>
       </Routes>
     </div>
   )
