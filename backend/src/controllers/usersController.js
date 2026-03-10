@@ -40,51 +40,72 @@ export async function signupUser(req,res) {
     }
 }
 
-export async function updateUser(req,res) {
-    //update events
-    // try {
-    //     const {title,content,location,maxcapacity,date} = req.body;        
-    //     const updateEvent = await Event.findByIdAndUpdate(req.params.id, {title,content,location,maxcapacity,date}, {new :true});
-    //     if (!updateEvent) return res.status(404).json({meassage:"Your event was not found"});
-        // res.status(200).json(updateEvent);
-    // } catch (error) {
-    //     if (error.name === 'CastError') {
-    //         return res.status(404).json({ message: 'Your event was not found' });
-    //     }
-    //     console.error("Error in updateEvent controller", error)
-    //     res.status(500).json({meassage:"Internal server error"});    
-    // }
-    res.status(200).json({message:"Update a user"});
-}
-
-export async function deleteUser(req,res) {
-    //delete events
-    // try {
-    //     const deleteEvent = await Event.findByIdAndDelete(req.params.id);
-    //     if (!deleteEvent) return res.status(404).json({meassage:"Your event was not found"});
-    //     res.status(200).json({meassage:"Your event was deleted successfully"});
-    // } catch (error) {
-    //     if (error.name === 'CastError') {
-    //         return res.status(404).json({ message: 'Your event was not found' });
-    //     }
-    //     console.error("Error in deleteEvent controller", error)
-    //     res.status(500).json({meassage:"Internal server error"});    
-    // }
-    res.status(200).json({message:"Delete a user"});
+export async function getUsers(req,res) {
+    //send users
+    try {
+        const users = await User.find().sort({createdAt:-1});
+        res.status(200).json(users);
+    } catch (error) {
+        console.error("Error in getUsers", error)
+        res.status(500).json({meassage:"Internal server error"});    
+    }
 }
 
 export async function getUser(req,res) {
-    //send events
-    // try {
-    //     const event = await Event.findById(req.params.id);
-    //     if (!event) return res.status(404).json({meassage:"Your event was not found"});
-    //     res.status(200).json(event);
-    // } catch (error) {
-    //     if (error.name === 'CastError') {
-    //         return res.status(404).json({ message: 'Your event was not found' });
-    //     }
-    //     console.error("Error in getAllEvents", error)
-    //     res.status(500).json({meassage:"Internal server error"});    
-    // }
-    res.status(200).json({message:"Get a user"});
+    //send user
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({meassage:"Your user was not found"});
+        res.status(200).json(user);
+    } catch (error) {
+        if (error.name === 'CastError') {
+            return res.status(404).json({ message: 'Your user was not found' });
+        }
+        console.error("Error in getUser", error)
+        res.status(500).json({meassage:"Internal server error"});    
+    }
+}
+
+export async function updateUser(req, res) {
+    try {
+        const updates = { ...req.body };
+
+        // Remove password if it exists
+        delete updates.password;
+
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            updates,
+            { new: true, runValidators: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json(user);
+
+    } catch (error) {
+        if (error.name === "CastError") {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        console.error("Error in updateUser controller", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export async function deleteUser(req,res) {
+    //delete users
+    try {
+        const deleteUser = await User.findByIdAndDelete(req.params.id);
+        if (!deleteUser) return res.status(404).json({meassage:"Your user was not found"});
+        res.status(200).json({meassage:"Your user was deleted successfully"});
+    } catch (error) {
+        if (error.name === 'CastError') {
+            return res.status(404).json({ message: 'Your user was not found' });
+        }
+        console.error("Error in deleteUser controller", error)
+        res.status(500).json({meassage:"Internal server error"});    
+    }
 }
