@@ -1,4 +1,6 @@
 import User from "../models/User.js"
+import bcrypt from "bcryptjs";
+import validator from "validator";
 import jwt from "jsonwebtoken";
 
 const createToken = (_id) => {
@@ -92,6 +94,58 @@ export async function updateUser(req, res) {
 
         console.error("Error in updateUser controller", error);
         res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export async function updateUserPassword(req, res) {
+    try {
+    const userId = req.user.id; // set by auth middleware
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        message: "Current password and new password are required",
+      });
+    }
+
+    if (!validator.isStrongPassword(newPassword)){
+        throw Error('New Password is not strong enough')
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    
+    // Check current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Current password is incorrect",
+      });
+    }
+    
+    // Hash new password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Password updated successfully",
+    });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+        message: "Server error",
+        });
     }
 }
 

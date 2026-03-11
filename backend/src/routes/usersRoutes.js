@@ -1,5 +1,6 @@
 import express from "express";
-import { signupUser, deleteUser, loginUser, getUser, updateUser, getUsers } from "../controllers/usersController.js";
+import { signupUser, deleteUser, loginUser, getUser, updateUser, getUsers, updateUserPassword } from "../controllers/usersController.js";
+import requireAuth from "../middleware/requireAuth.js"
 
 const router = express.Router();
 
@@ -11,6 +12,7 @@ router.post("/signup", signupUser);
 router.get("/", getUsers)
 router.get("/:id", getUser)
 router.put("/:id", updateUser)
+router.put("/change-password", requireAuth, updateUserPassword)
 router.delete("/:id", deleteUser)
 
 
