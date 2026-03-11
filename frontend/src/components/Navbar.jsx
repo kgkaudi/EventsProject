@@ -47,6 +47,12 @@ const Navbar = () => {
                     <span>Users</span>
                   </Link>
                 )}
+                {user && (
+                  <Link to={`/profile/${user.id}`} className="btn btn-primary">                  
+                    <User className='size-5'/>
+                    <span>My Profile</span>
+                  </Link>
+                )}
                 {!user && (
                   <div>
                     <Link to={"/login"} className='btn btn-primary link-btn'>

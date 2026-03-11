@@ -17,6 +17,7 @@ export async function loginUser(req,res) {
 
         res.status(200).json({
             email: email,
+            id: user.id,
             name: user.name,
             role: user.role,
             token: token});
@@ -99,11 +100,11 @@ export async function updateUser(req, res) {
 
 export async function updateUserPassword(req, res) {
     try {
-    const userId = req.user.id; // set by auth middleware
-    const { currentPassword, newPassword } = req.body;
+    const userId = req.params.id;
+    const { password, newPassword } = req.body;
 
     // Validate input
-    if (!currentPassword || !newPassword) {
+    if (!password || !newPassword) {
       return res.status(400).json({
         message: "Current password and new password are required",
       });
@@ -122,7 +123,7 @@ export async function updateUserPassword(req, res) {
     }
     
     // Check current password
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
         message: "Current password is incorrect",
