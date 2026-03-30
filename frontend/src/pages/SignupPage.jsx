@@ -4,21 +4,21 @@ import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router";
 import { BASE_URL } from "../lib/axios";
 import { useAuthContext } from "../hooks/useAuthContext";
+import PasswordInput from "../components/PasswordInput";
 
 const SignupPage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
-  const [loading, setLoading] = useState(false);  
-  const [error, setError] = useState(null)
-  const { dispatch } = useAuthContext()
+  const [role, setRole] = useState("user");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
+  const { dispatch } = useAuthContext();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const role = 'user';
 
     if (!name.trim() || !email.trim() || !password.trim() || !role.trim()) {
       toast.error("All fields are required");
@@ -26,30 +26,26 @@ const SignupPage = () => {
     }
 
     setLoading(true);
-    setError(null)
+    setError(null);
 
     const response = await fetch(`${BASE_URL}/users/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, role })
+      body: JSON.stringify({ name, email, password, role }),
     });
-    
-    const json = await response.json()
+
+    const json = await response.json();
 
     if (!response.ok) {
-      setLoading(false)
-      setError(json.error)
+      setLoading(false);
+      setError(json.error);
       toast.error(json.error);
     }
+
     if (response.ok) {
-      // save the user to local storage
-      localStorage.setItem('user', JSON.stringify(json))
-
-      // update the auth context
-      dispatch({type: 'LOGIN', payload: json})
-
-      // update loading state
-      setLoading(false)
+      localStorage.setItem("user", JSON.stringify(json));
+      dispatch({ type: "LOGIN", payload: json });
+      setLoading(false);
 
       toast.success("User created successfully!");
       navigate("/");
@@ -67,7 +63,8 @@ const SignupPage = () => {
 
           <div className="card bg-base-100">
             <div className="card-body">
-              <h2 className="card-title text-2xl mb-4">Sign in</h2>
+              <h2 className="card-title text-2xl mb-4">Sign up</h2>
+
               <form onSubmit={handleSubmit}>
                 <div className="form-control mb-4">
                   <label className="label">
@@ -95,36 +92,39 @@ const SignupPage = () => {
                   />
                 </div>
 
-                <div className="form-control mb-4">
-                  <label className="label">
-                    <span className="label-text">Password</span>
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Password..."
-                    className="input input-bordered"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
+                <PasswordInput
+                  label="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
 
                 <div className="form-control mb-4">
                   <label className="label">
                     <span className="label-text">Role</span>
                   </label>
-                    <div>
-                      <select value={role} onChange={(e) => setRole(e.target.value)} className="input input-bordered">
-                        <option value="user">User</option>                        
-                      </select>
-                    </div>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="input input-bordered"
+                  >
+                    <option value="user">User</option>
+                  </select>
                 </div>
 
                 <div className="card-actions justify-end">
-                  <button type="submit" className="btn btn-primary" disabled={loading}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading}
+                  >
                     {loading ? "Creating..." : "Create User"}
                   </button>
                 </div>
               </form>
+
+              {error && (
+                <p className="text-red-500 text-sm mt-2">{error}</p>
+              )}
             </div>
           </div>
         </div>
@@ -132,4 +132,5 @@ const SignupPage = () => {
     </div>
   );
 };
+
 export default SignupPage;

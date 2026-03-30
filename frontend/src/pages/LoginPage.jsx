@@ -4,13 +4,14 @@ import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router";
 import { BASE_URL } from "../lib/axios";
 import { useAuthContext } from "../hooks/useAuthContext";
+import PasswordInput from "../components/PasswordInput";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null)
-  const { dispatch } = useAuthContext()
+  const [error, setError] = useState(null);
+  const { dispatch } = useAuthContext();
 
   const navigate = useNavigate();
 
@@ -23,30 +24,26 @@ const LoginPage = () => {
     }
 
     setLoading(true);
-    setError(null)
+    setError(null);
 
     const response = await fetch(`${BASE_URL}/users/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password})
+      body: JSON.stringify({ email, password }),
     });
-    
-    const json = await response.json()
+
+    const json = await response.json();
 
     if (!response.ok) {
-      setLoading(false)
-      setError(json.error)
+      setLoading(false);
+      setError(json.error);
       toast.error(json.error);
     }
+
     if (response.ok) {
-      // save the user to local storage
-      localStorage.setItem('user', JSON.stringify(json))
-
-      // update the auth context
-      dispatch({type: 'LOGIN', payload: json})
-
-      // update loading state
-      setLoading(false)
+      localStorage.setItem("user", JSON.stringify(json));
+      dispatch({ type: "LOGIN", payload: json });
+      setLoading(false);
 
       toast.success("User logged in successfully!");
       navigate("/");
@@ -65,6 +62,7 @@ const LoginPage = () => {
           <div className="card bg-base-100">
             <div className="card-body">
               <h2 className="card-title text-2xl mb-4">Log in</h2>
+
               <form onSubmit={handleLogin}>
                 <div className="form-control mb-4">
                   <label className="label">
@@ -79,25 +77,26 @@ const LoginPage = () => {
                   />
                 </div>
 
-                <div className="form-control mb-4">
-                  <label className="label">
-                    <span className="label-text">Password</span>
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Password..."
-                    className="input input-bordered"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
+                <PasswordInput
+                  label="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
 
                 <div className="card-actions justify-end">
-                  <button type="submit" className="btn btn-primary" disabled={loading}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading}
+                  >
                     {loading ? "Logging in..." : "Log in"}
                   </button>
                 </div>
               </form>
+
+              {error && (
+                <p className="text-red-500 text-sm mt-2">{error}</p>
+              )}
             </div>
           </div>
         </div>
@@ -105,4 +104,5 @@ const LoginPage = () => {
     </div>
   );
 };
+
 export default LoginPage;
