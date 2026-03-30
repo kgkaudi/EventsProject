@@ -12,23 +12,38 @@ export async function getAllEvents(req,res) {
     }
 }
 
-export async function createEvent(req,res) {
-    //create events
-    try {
-        const user_id = req.user._id;
-        const user = await User.findById(user_id);
-        if (!user) return res.status(404).json({ message: 'User not found' });
-        const createdBy = user.name;
-        
-        const {title,content,location,maxcapacity,date} = req.body;
-        const newEvent = new Event({title, content, location, maxcapacity, date, createdBy});
+export async function createEvent(req, res) {
+  try {
+    // Support both authenticated user and explicit createdBy
+    const userId = req.user?._id || req.body.createdBy;
 
-        await newEvent.save();
-        res.status(201).json({meassage:"Your event was created successfully"});
-    } catch (error) {
-        console.error("Error in createEvent controller", error)
-        res.status(500).json({meassage:"Internal server error"});    
+    if (!userId) {
+      return res.status(400).json({ message: "Missing createdBy or user context" });
     }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const createdBy = user.name;
+
+    const { title, content, location, maxcapacity, date } = req.body;
+
+    const newEvent = new Event({
+      title,
+      content,
+      location,
+      maxcapacity,
+      date,
+      createdBy
+    });
+
+    await newEvent.save();
+
+    res.status(201).json({ message: "Your event was created successfully" });
+  } catch (error) {
+    console.error("Error in createEvent controller", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 }
 
 export async function updateEvent(req,res) {
@@ -63,6 +78,7 @@ export async function deleteEvent(req,res) {
 }
 
 export async function getEvent(req,res) {
+    //send events
     //send events
     try {
         const event = await Event.findById(req.params.id);
