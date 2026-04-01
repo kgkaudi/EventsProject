@@ -10,7 +10,8 @@ jest.unstable_mockModule("../../src/controllers/usersController.js", () => ({
   getUser: jest.fn(),
   updateUser: jest.fn(),
   updateUserPassword: jest.fn(),
-  deleteUser: jest.fn()
+  deleteUser: jest.fn(),
+  updateUserRole: jest.fn()
 }));
 
 // 2. Mock requireAuth BEFORE importing routes

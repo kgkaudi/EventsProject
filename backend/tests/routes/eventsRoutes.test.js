@@ -9,7 +9,8 @@ jest.unstable_mockModule("../../src/controllers/eventsController.js", () => ({
   createEvent: jest.fn(),
   updateEvent: jest.fn(),
   deleteEvent: jest.fn(),
-  getMyEvents: jest.fn()
+  getMyEvents: jest.fn(),
+  getEventStats: jest.fn()
 }));
 
 // 2. Mock auth middleware BEFORE importing routes

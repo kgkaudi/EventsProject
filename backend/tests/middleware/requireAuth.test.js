@@ -8,13 +8,11 @@ if (mongoose.modelNames().includes("User")) {
 
 // 1. Mock User model BEFORE importing middleware
 jest.unstable_mockModule("../../src/models/User.js", () => {
-  const mockUser = {
-    findOne: jest.fn(() => ({
-      select: jest.fn().mockResolvedValue(null)
-    }))
+  return {
+    default: {
+      findById: jest.fn()
+    }
   };
-
-  return { default: mockUser };
 });
 
 // 2. Mock JWT BEFORE importing middleware
@@ -77,14 +75,14 @@ describe("requireAuth Middleware", () => {
 
     jwt.verify.mockReturnValue({ _id: "123" });
 
-    // findOne().select() resolves to null
-    User.findOne.mockReturnValue({
+    // findById().select() resolves to null
+    User.findById.mockReturnValue({
       select: jest.fn().mockResolvedValue(null)
     });
 
     await requireAuth(req, res, next);
 
-    expect(User.findOne).toHaveBeenCalledWith({ _id: "123" });
+    expect(User.findById).toHaveBeenCalledWith("123");
     expect(res.status).toHaveBeenCalledWith(401);
   });
 
@@ -95,13 +93,13 @@ describe("requireAuth Middleware", () => {
 
     jwt.verify.mockReturnValue({ _id: "123" });
 
-    User.findOne.mockReturnValue({
-      select: jest.fn().mockResolvedValue({ _id: "123" })
+    User.findById.mockReturnValue({
+      select: jest.fn().mockResolvedValue({ _id: "123", role: "admin" })
     });
 
     await requireAuth(req, res, next);
 
-    expect(User.findOne).toHaveBeenCalledWith({ _id: "123" });
+    expect(User.findById).toHaveBeenCalledWith("123");
     expect(next).toHaveBeenCalled();
   });
 });
