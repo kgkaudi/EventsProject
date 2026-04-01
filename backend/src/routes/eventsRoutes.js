@@ -1,5 +1,5 @@
 import express from "express";
-import { getAllEvents, createEvent, updateEvent, deleteEvent, getEvent} from "../controllers/eventsController.js";
+import { getAllEvents, createEvent, updateEvent, deleteEvent, getEvent, getMyEvents} from "../controllers/eventsController.js";
 import requireAuth from "../middleware/requireAuth.js";
 
 const router = express.Router();
@@ -8,6 +8,7 @@ const router = express.Router();
 router.get("/", getAllEvents);
 router.get("/:id", getEvent)
 router.use(requireAuth)
+router.get("/mine", requireAuth, getMyEvents);
 router.post("/", createEvent);
 router.put("/:id", updateEvent)
 router.delete("/:id", deleteEvent)

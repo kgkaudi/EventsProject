@@ -222,7 +222,6 @@ npm run test:watch
 ## 🧩 Future Improvements
 
 - Event categories & tags  
-- User roles (admin, organizer, attendee)  
 - Email notifications  
 - Pagination & search  
 - Image uploads for events  

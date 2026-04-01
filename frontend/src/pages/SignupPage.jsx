@@ -14,7 +14,7 @@ const SignupPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const { dispatch } = useAuthContext();
+  const { login } = useAuthContext();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -40,16 +40,16 @@ const SignupPage = () => {
       setLoading(false);
       setError(json.error);
       toast.error(json.error);
+      return;
     }
 
-    if (response.ok) {
-      localStorage.setItem("user", JSON.stringify(json));
-      dispatch({ type: "LOGIN", payload: json });
-      setLoading(false);
+    // Save user and login
+    localStorage.setItem("user", JSON.stringify(json));
+    login(json);
 
-      toast.success("User created successfully!");
-      navigate("/");
-    }
+    setLoading(false);
+    toast.success("User created successfully!");
+    navigate("/");
   };
 
   return (

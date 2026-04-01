@@ -18,7 +18,7 @@ export const UsersPage = () => {
         try {
             const res = await api.get("/users")
             // const data = await res.data();
-            console.log(res.data);
+            // console.log(res.data);
             setUsers(res.data);
             setIsRateLimited(false);
         } catch (error) {

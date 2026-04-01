@@ -1,20 +1,25 @@
 import { PenSquareIcon, Trash2Icon } from "lucide-react";
-import { Link } from "react-router";
+import { useNavigate, Link } from "react-router";
 import { formatDate, formatLocalDateTime } from "../lib/utils";
 import api from "../lib/axios";
-import { useAuthContext } from '../hooks/useAuthContext'
+import { useAuthContext } from "../hooks/useAuthContext";
 import toast from "react-hot-toast";
 
 const EventCard = ({ event, setEvents }) => {
-  const { user } = useAuthContext()
+  const navigate = useNavigate();
+  const { user } = useAuthContext();
+
+  const isOwner = user?.user?.id === event.createdBy?._id;
+
   const handleDelete = async (e, id) => {
-    e.preventDefault(); // get rid of the navigation behaviour
+    e.stopPropagation(); // prevent card click
+    e.preventDefault();
 
     if (!window.confirm("Are you sure you want to delete this event?")) return;
 
     try {
       await api.delete(`/events/${id}`);
-      setEvents((prev) => prev.filter((event) => event._id !== id)); // get rid of the deleted one
+      setEvents((prev) => prev.filter((event) => event._id !== id));
       toast.success("Event deleted successfully");
     } catch (error) {
       console.log("Error in handleDelete", error);
@@ -23,30 +28,32 @@ const EventCard = ({ event, setEvents }) => {
   };
 
   return (
-    <Link
-      to={`/event/${event._id}`}
+    <div
+      onClick={() => navigate(`/event/${event._id}`)}
       className="card bg-base-100 hover:shadow-lg transition-all duration-200 
-      border-t-4 border-solid border-[#00FF9D]"
+      border-t-4 border-solid border-[#00FF9D] cursor-pointer"
     >
       <div className="card-body">
         <h3 className="card-title text-base-content">{event.title}</h3>
         <p className="text-base-content/70 line-clamp-3">{event.content}</p>
-        <p className="text-base-content/70 line-clamp-3">Location: {event.location}</p>
-        <p className="text-base-content/70 line-clamp-3">Max Capacity: {event.maxcapacity ?? "-"}</p>
-        <p className="text-base-content/70 line-clamp-3">Date: {formatLocalDateTime(event.date)}</p>
+        <p className="text-base-content/70">Location: {event.location}</p>
+        <p className="text-base-content/70">Max Capacity: {event.maxcapacity ?? "-"}</p>
+        <p className="text-base-content/70">Date: {formatLocalDateTime(event.date)}</p>
+
         <div className="card-actions justify-between items-center mt-4">
           <span className="text-sm text-base-content/60">
-            Created By: {event.createdBy ?? "-"}
-          </span>          
-          
+            Created By: {event.createdBy?.name ?? "-"}
+          </span>
         </div>
         <div className="card-actions justify-between items-center mt-4">
           <span className="text-sm text-base-content/60">
             Created At: {formatDate(new Date(event.createdAt))}
           </span>
-          {user && (
+
+          {isOwner && (
             <div className="flex items-center gap-1">
-              <PenSquareIcon className="size-4" />
+
+              {/* DELETE BUTTON */}
               <button
                 className="btn btn-ghost btn-xs text-error"
                 onClick={(e) => handleDelete(e, event._id)}
@@ -55,10 +62,9 @@ const EventCard = ({ event, setEvents }) => {
               </button>
             </div>
           )}
-          
         </div>
       </div>
-    </Link>
+    </div>
   );
 };
 export default EventCard;

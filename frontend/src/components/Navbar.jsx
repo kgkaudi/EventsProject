@@ -6,7 +6,7 @@ import { useAuthContext } from '../hooks/useAuthContext'
 import toast from "react-hot-toast";
 
 const Navbar = () => {
-  const { logout } = useLogout()
+  const { logout } = useLogout();
   const { user } = useAuthContext()
   
   const handleLogout = () => {
@@ -26,7 +26,7 @@ const Navbar = () => {
               <div className='flex items-center gap-4'>
                 {user && (
                   <div className='parent_div'>
-                    <span className='hello-navbar'>Hello, {user.name}!</span>
+                    <span className='hello-navbar'>Hello, {user.user.name}!</span>
                   </div>
                 )}
                 {user && (
@@ -41,14 +41,14 @@ const Navbar = () => {
                     <span>New Event</span>
                   </Link>
                 )}
-                {user && user.role === "admin" && (
+                {user && user.user.role === "admin" && (
                   <Link to={"/users"} className='btn btn-primary'>
                     <User className='size-5'/>
                     <span>Users</span>
                   </Link>
                 )}
                 {user && (
-                  <Link to={`/profile/${user.id}`} className="btn btn-primary">                  
+                  <Link to={`/profile/${user.user.id}`} className="btn btn-primary">                  
                     <User className='size-5'/>
                     <span>My Profile</span>
                   </Link>

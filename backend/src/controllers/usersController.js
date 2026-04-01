@@ -7,40 +7,46 @@ const createToken = (_id) => {
     return jwt.sign({_id}, process.env.SECRET, { expiresIn: '3d'})
 }
 
-export async function loginUser(req,res) {
-    const {email,password} = req.body
-    
-    try{
-        const user = await User.login(email,password)
-        //create a token
-        const token = createToken(user._id)
+export async function loginUser(req, res) {
+  const { email, password } = req.body;
 
-        res.status(200).json({
-            email: email,
-            id: user.id,
-            name: user.name,
-            role: user.role,
-            token: token});
-    } catch (error) {
-        res.status(500).json({error: error.message});
-    }    
-    
+  try {
+    const user = await User.login(email, password);
+    const token = createToken(user._id);
+
+    res.status(200).json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      token
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }
 
-export async function signupUser(req,res) {
-    //signup users
-    const {name,email,password,role} = req.body
+export async function signupUser(req, res) {
+  const { name, email, password, role } = req.body;
 
-    try{
-        const user = await User.signup(name,email,password,role)
-        
-        //create a token
-        const token = createToken(user._id)
+  try {
+    const user = await User.signup(name, email, password, role);
+    const token = createToken(user._id);
 
-        res.status(201).json({email,name,role,token});
-    } catch (error) {
-        res.status(500).json({error: error.message});
-    }
+    res.status(201).json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      token
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }
 
 export async function getUsers(req,res) {

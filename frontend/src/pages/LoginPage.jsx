@@ -11,7 +11,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { dispatch } = useAuthContext();
+  const { login } = useAuthContext();
 
   const navigate = useNavigate();
 
@@ -42,7 +42,7 @@ const LoginPage = () => {
 
     if (response.ok) {
       localStorage.setItem("user", JSON.stringify(json));
-      dispatch({ type: "LOGIN", payload: json });
+      login(json);
       setLoading(false);
 
       toast.success("User logged in successfully!");

@@ -1,20 +1,18 @@
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import api from "../lib/axios";
 import { formatLocalDateTime } from "../lib/utils";
 import toast from "react-hot-toast";
-import { useAuthContext } from '../hooks/useAuthContext'
+import { useAuthContext } from "../hooks/useAuthContext";
 import { ArrowLeftIcon, LoaderIcon, Trash2Icon } from "lucide-react";
 
 const EventDetailPage = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const { user } = useAuthContext()
 
+  const { user } = useAuthContext();
   const navigate = useNavigate();
-
   const { id } = useParams();
 
   useEffect(() => {
@@ -36,13 +34,15 @@ const EventDetailPage = () => {
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this event?")) return;
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const storedUser = JSON.parse(localStorage.getItem("user"));
 
     try {
       await api.delete(`/events/${id}`, {
-      headers: {
-        Authorization: `Bearer ${user?.token}`,
-      },});
+        headers: {
+          Authorization: `Bearer ${storedUser?.token}`,
+        },
+      });
+
       toast.success("Event deleted");
       navigate("/");
     } catch (error) {
@@ -58,20 +58,23 @@ const EventDetailPage = () => {
   };
 
   const handleSave = async () => {
-    if (!event.title.trim() || !event.content.trim() || !event.location.trim() || !event.date.trim()) {    
+    if (
+      !event.title.trim() ||
+      !event.content.trim() ||
+      !event.location.trim() ||
+      !event.date.trim()
+    ) {
       toast.error("Please add a title, content, location, maximum capacity or date");
       return;
     }
 
-    const user = JSON.parse(localStorage.getItem("user"));
-
+    const storedUser = JSON.parse(localStorage.getItem("user"));
     setSaving(true);
 
     try {
-      await api.put(`/events/${id}`, event,
-      {
+      await api.put(`/events/${id}`, event, {
         headers: {
-          Authorization: `Bearer ${user?.token}`,
+          Authorization: `Bearer ${storedUser?.token}`,
         },
       });
       toast.success("Event updated successfully");
@@ -96,6 +99,7 @@ const EventDetailPage = () => {
     );
   }
   const eventDate = formatLocalDateTime(event.date);
+  const isOwner = user?.user?.id === event.createdBy?._id;
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -106,11 +110,12 @@ const EventDetailPage = () => {
               <ArrowLeftIcon className="h-5 w-5" />
               Back to Events
             </Link>
-            {user && (
-            <button onClick={handleDelete} className="btn btn-error btn-outline">
-              <Trash2Icon className="h-5 w-5" />
-              Delete Event
-            </button>
+
+            {isOwner && (
+              <button onClick={handleDelete} className="btn btn-error btn-outline">
+                <Trash2Icon className="h-5 w-5" />
+                Delete Event
+              </button>
             )}
           </div>
 
@@ -120,19 +125,16 @@ const EventDetailPage = () => {
                 <label className="label">
                   <span className="label-text">Title:</span>
                 </label>
-                {user && (
-                <input
-                  type="text"
-                  placeholder="Event title"
-                  className="input input-bordered"
-                  value={event.title}
-                  onChange={(e) => setEvent({ ...event, title: e.target.value })}
-                />
-                )}
-                {!user && (
-                <label className="label">
-                  <h1 className="label-text">{event.title}</h1>                  
-                </label>
+
+                {isOwner ? (
+                  <input
+                    type="text"
+                    className="input input-bordered"
+                    value={event.title ?? ""}
+                    onChange={(e) => setEvent({ ...event, title: e.target.value })}
+                  />
+                ) : (
+                  <p className="label-text">{event.title}</p>
                 )}
               </div>
 
@@ -140,18 +142,15 @@ const EventDetailPage = () => {
                 <label className="label">
                   <span className="label-text">Content:</span>
                 </label>
-                {user && (
-                <textarea
-                  placeholder="Write your event here..."
-                  className="textarea textarea-bordered h-32"
-                  value={event.content}
-                  onChange={(e) => setEvent({ ...event, content: e.target.value })}
-                />
-                )}
-                {!user && (
-                <label className="label">
-                  <p className="label-text">{event.content}</p>                  
-                </label>
+
+                {isOwner ? (
+                  <textarea
+                    className="textarea textarea-bordered h-32"
+                    value={event.content ?? ""}
+                    onChange={(e) => setEvent({ ...event, content: e.target.value })}
+                  />
+                ) : (
+                  <p className="label-text">{event.content}</p>
                 )}
               </div>
 
@@ -159,19 +158,16 @@ const EventDetailPage = () => {
                 <label className="label">
                   <span className="label-text">Location:</span>
                 </label>
-                {user && (
-                <input
-                  type="text"
-                  placeholder="Write your location here..."
-                  className="input input-bordered"
-                  value={event.location}
-                  onChange={(e) => setEvent({ ...event, location: e.target.value })}
-                />
-                )}
-                {!user && (
-                <label className="label">
-                  <p className="label-text">{event.location}</p>                  
-                </label>
+
+                {isOwner ? (
+                  <input
+                    type="text"
+                    className="input input-bordered"
+                    value={event.location ?? ""}
+                    onChange={(e) => setEvent({ ...event, location: e.target.value })}
+                  />
+                ) : (
+                  <p className="label-text">{event.location}</p>
                 )}
               </div>
 
@@ -179,19 +175,16 @@ const EventDetailPage = () => {
                 <label className="label">
                   <span className="label-text">Maximum Capacity:</span>
                 </label>
-                {user && (
-                <input
-                  type="number"
-                  placeholder="Write your max capacity here..."
-                  className="input input-bordered"
-                  value={event.maxcapacity}
-                  onChange={(e) => setEvent({ ...event, maxcapacity: e.target.value })}
-                />
-                )}
-                {!user && (
-                <label className="label">
+
+                {isOwner ? (
+                  <input
+                    type="number"
+                    className="input input-bordered"
+                    value={event.maxcapacity ?? ""}
+                    onChange={(e) => setEvent({ ...event, maxcapacity: e.target.value })}
+                  />
+                ) : (
                   <p className="label-text">{event.maxcapacity ?? "-"}</p>
-                </label>
                 )}
               </div>
 
@@ -199,23 +192,26 @@ const EventDetailPage = () => {
                 <label className="label">
                   <span className="label-text">Date: {eventDate}</span>
                 </label>
-                {user && (
-                 <input
+
+                {isOwner && (
+                  <input
                     type="datetime-local"
-                    value={event.date}
                     className="input input-bordered"
+                    value={event.date ? event.date.slice(0, 16) : ""}
                     onChange={(e) => setEvent({ ...event, date: e.target.value })}
                   />
-                  )}
+                )}
               </div>
 
               <div className="form-control mb-4">
                 <label className="label">
-                  <span className="label-text">Created By: {event.createdBy}</span>
+                  <span className="label-text">
+                    Created By: {isOwner ? "You" : event.createdBy?.name ?? "-"}
+                  </span>
                 </label>
               </div>
-                
-              {user && (
+
+              {isOwner && (
                 <div className="card-actions justify-end">
                   <button className="btn btn-primary" disabled={saving} onClick={handleSave}>
                     {saving ? "Saving..." : "Save Changes"}

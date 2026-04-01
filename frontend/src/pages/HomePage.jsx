@@ -18,7 +18,7 @@ export const HomePage = () => {
         try {
             const res = await api.get("/events")
             // const data = await res.data();
-            console.log(res.data);
+            // console.log(res.data);
             setEvents(res.data);
             setIsRateLimited(false);
         } catch (error) {

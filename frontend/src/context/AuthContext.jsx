@@ -1,38 +1,31 @@
-import { createContext, useReducer, useEffect } from "react";
+import { createContext, useEffect, useState } from "react";
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const AuthContext = createContext()
+export const AuthContext = createContext();
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const authReducer = (state, action) => {
-    switch (action.type){
-        case 'LOGIN':
-            return { user: action.payload }
-        case 'LOGOUT':
-            return { user: null}
-        default:
-            return state
+export const AuthContextProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+
+  // Load user from localStorage on first render
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
     }
-}
+  }, []);
 
-export const AuthContextProvider = ({children}) => {
-    const [state, dispatch] = useReducer(authReducer, {
-        user: null
-    })
+  const login = (userData) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+  };
 
-    useEffect(() => {
-        const user = JSON.parse(localStorage.getItem('user'))
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+  };
 
-        if (user) {
-            dispatch({type: 'LOGIN', payload: user})
-        }
-    }, [])
-
-    console.log('AuthContext state: ', state)
-
-    return(
-        <AuthContext.Provider value={{...state, dispatch}}>
-            { children }
-        </AuthContext.Provider>
-    )
-}
+  return (
+    <AuthContext.Provider value={{ user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
