@@ -8,12 +8,11 @@ if (mongoose.modelNames().includes("User")) {
 
 // 1. Mock User model BEFORE importing middleware
 jest.unstable_mockModule("../../src/models/User.js", () => {
-  const mockUser = jest.fn();
-
-  // Default mock: findOne().select() resolves to null
-  mockUser.findOne = jest.fn(() => ({
-    select: jest.fn().mockResolvedValue(null)
-  }));
+  const mockUser = {
+    findOne: jest.fn(() => ({
+      select: jest.fn().mockResolvedValue(null)
+    }))
+  };
 
   return { default: mockUser };
 });

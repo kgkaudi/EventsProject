@@ -13,13 +13,22 @@ jest.unstable_mockModule("../../src/controllers/usersController.js", () => ({
   deleteUser: jest.fn()
 }));
 
-// 2. Import mocked controllers
-const usersController = await import("../../src/controllers/usersController.js");
+// 2. Mock requireAuth BEFORE importing routes
+jest.unstable_mockModule("../../src/middleware/requireAuth.js", () => ({
+  default: jest.fn((req, res, next) => {
+    req.user = { _id: "mockAdmin123" }; // inject fake authenticated user
+    next();
+  })
+}));
 
-// 3. Import routes AFTER mocks
+// 3. Import mocked modules
+const usersController = await import("../../src/controllers/usersController.js");
+const requireAuth = (await import("../../src/middleware/requireAuth.js")).default;
+
+// 4. Import routes AFTER mocks
 const usersRoutes = (await import("../../src/routes/usersRoutes.js")).default;
 
-// 4. Build app AFTER importing routes
+// 5. Build app AFTER importing routes
 const app = express();
 app.use(express.json());
 app.use("/users", usersRoutes);
@@ -106,9 +115,12 @@ describe("Users Routes", () => {
       res.status(200).json({ message: "Deleted" })
     );
 
-    const res = await request(app).delete("/users/123");
+    const res = await request(app)
+      .delete("/users/123")
+      .send({ password: "StrongPass123!" }); // route test doesn't validate password
 
-    expect(res.status).toBe(200);
+    expect(requireAuth).toHaveBeenCalled();
     expect(usersController.deleteUser).toHaveBeenCalled();
+    expect(res.status).toBe(200);
   });
 });

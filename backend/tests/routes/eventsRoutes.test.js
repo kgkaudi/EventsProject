@@ -8,12 +8,16 @@ jest.unstable_mockModule("../../src/controllers/eventsController.js", () => ({
   getEvent: jest.fn(),
   createEvent: jest.fn(),
   updateEvent: jest.fn(),
-  deleteEvent: jest.fn()
+  deleteEvent: jest.fn(),
+  getMyEvents: jest.fn()
 }));
 
 // 2. Mock auth middleware BEFORE importing routes
 jest.unstable_mockModule("../../src/middleware/requireAuth.js", () => ({
-  default: jest.fn((req, res, next) => next())
+  default: jest.fn((req, res, next) => {
+    req.user = { _id: "mockUser123" }; // inject fake authenticated user
+    next();
+  })
 }));
 
 // 3. Import mocked modules
@@ -54,8 +58,6 @@ describe("Events Routes", () => {
   });
 
   test("POST /events requires auth", async () => {
-    requireAuth.mockImplementation((req, res, next) => next());
-
     eventsController.createEvent.mockImplementation((req, res) =>
       res.status(201).json({ message: "Created" })
     );
@@ -77,8 +79,6 @@ describe("Events Routes", () => {
   });
 
   test("PUT /events/:id requires auth", async () => {
-    requireAuth.mockImplementation((req, res, next) => next());
-
     eventsController.updateEvent.mockImplementation((req, res) =>
       res.status(200).json({ title: "Updated" })
     );
@@ -94,8 +94,6 @@ describe("Events Routes", () => {
   });
 
   test("DELETE /events/:id requires auth", async () => {
-    requireAuth.mockImplementation((req, res, next) => next());
-
     eventsController.deleteEvent.mockImplementation((req, res) =>
       res.status(200).json({ message: "Deleted" })
     );
