@@ -36,6 +36,24 @@ const UserCard = ({ user, setUsers }) => {
     }
   };
 
+  const handleRoleChange = async (id, newRole) => {
+  try {
+    const res = await api.put(
+      `/users/${id}/role`,
+      { role: newRole },
+      { headers: { Authorization: `Bearer ${loggedIn?.token}` } }
+    );
+
+    setUsers((prev) =>
+      prev.map((u) => (u._id === id ? { ...u, role: newRole } : u))
+    );
+
+    toast.success(`Role updated to ${newRole}`);
+  } catch (error) {
+    toast.error("Failed to update role");
+  }
+};
+
   return (
     <>
       {/* CARD */}
@@ -48,7 +66,36 @@ const UserCard = ({ user, setUsers }) => {
           <h3 className="card-title text-base-content">Name: {user.name}</h3>
           <p className="text-base-content/70">Email: {user.email}</p>
           <p className="text-base-content/70">
-            Role: <span className="user-card-role">{user.role}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">Role:</span>
+              <span className="badge badge-outline">{user.role}</span>
+
+              {loggedIn.user.role === "admin" && (
+                <div className="flex gap-1">
+                  <button
+                    className="btn btn-xs btn-success"
+                    disabled={user.role === "admin"}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleRoleChange(user._id, "admin");
+                    }}
+                  >
+                    Promote
+                  </button>
+
+                  <button
+                    className="btn btn-xs btn-warning"
+                    disabled={user.role === "user"}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleRoleChange(user._id, "user");
+                    }}
+                  >
+                    Demote
+                  </button>
+                </div>
+              )}
+            </div>
           </p>
 
           <div className="card-actions justify-between items-center mt-4">

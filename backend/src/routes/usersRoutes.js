@@ -7,9 +7,11 @@ import {
   updateUser,
   getUsers,
   updateUserPassword,
+  updateUserRole,
 } from "../controllers/usersController.js";
 
 import requireAuth from "../middleware/requireAuth.js";
+import adminOnly from "../middleware/adminOnly.js";
 
 const router = express.Router();
 
@@ -22,6 +24,7 @@ router.get("/", getUsers);
 router.get("/:id", getUser);
 router.put("/:id", updateUser);
 router.put("/change-password/:id", updateUserPassword);
-router.delete("/:id", requireAuth, deleteUser); // now works
+router.delete("/:id", requireAuth, deleteUser);
+router.put("/:id/role", requireAuth, adminOnly, updateUserRole);
 
 export default router;
