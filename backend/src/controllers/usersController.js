@@ -2,6 +2,7 @@ import User from "../models/User.js"
 import bcrypt from "bcryptjs";
 import validator from "validator";
 import jwt from "jsonwebtoken";
+import Event from "../models/Event.js";
 
 const createToken = (_id) => {
     return jwt.sign({_id}, process.env.SECRET, { expiresIn: '3d'})
@@ -156,17 +157,45 @@ export async function updateUserPassword(req, res) {
     }
 }
 
-export async function deleteUser(req,res) {
-    //delete users
-    try {
-        const deleteUser = await User.findByIdAndDelete(req.params.id);
-        if (!deleteUser) return res.status(404).json({meassage:"Your user was not found"});
-        res.status(200).json({meassage:"Your user was deleted successfully"});
-    } catch (error) {
-        if (error.name === 'CastError') {
-            return res.status(404).json({ message: 'Your user was not found' });
-        }
-        console.error("Error in deleteUser controller", error)
-        res.status(500).json({meassage:"Internal server error"});    
+export async function deleteUser(req, res) {
+  try {
+    const userId = req.params.id;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: "Password is required to delete a user" });
     }
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const adminId = req.user._id;
+    const admin = await User.findById(adminId);
+
+    if (!admin) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Incorrect password" });
+    }
+
+    const deletedUser = await User.findByIdAndDelete(userId);
+    if (!deletedUser) {
+      return res.status(404).json({ message: "Your user was not found" });
+    }
+
+    // Cascade delete events
+    await Event.deleteMany({ createdBy: userId });
+
+    res.status(200).json({
+      message: "User and all associated events were deleted successfully",
+    });
+
+  } catch (error) {
+    console.error("Error in deleteUser controller", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 }

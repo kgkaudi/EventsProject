@@ -1,19 +1,18 @@
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import api from "../lib/axios";
 import toast from "react-hot-toast";
-import { useAuthContext } from '../hooks/useAuthContext'
-import { ArrowLeftIcon, LoaderIcon, Trash2Icon } from "lucide-react";
+import { ArrowLeftIcon, LoaderIcon, Trash2Icon, Eye, EyeOff } from "lucide-react";
 
 const UserDetailPage = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const { users } = useAuthContext()
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
-
   const { id } = useParams();
 
   useEffect(() => {
@@ -33,15 +32,23 @@ const UserDetailPage = () => {
   }, [id]);
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    if (!deletePassword.trim()) {
+      toast.error("Please enter your password to confirm deletion");
+      return;
+    }
 
     const users = JSON.parse(localStorage.getItem("user"));
 
     try {
       await api.delete(`/users/${id}`, {
-      headers: {
-        Authorization: `Bearer ${users?.token}`,
-      },});
+        headers: {
+          Authorization: `Bearer ${users?.token}`,
+        },
+        data: {
+          password: deletePassword,
+        },
+      });
+
       toast.success("User deleted");
       navigate("/");
     } catch (error) {
@@ -50,6 +57,8 @@ const UserDetailPage = () => {
         toast.error("Unauthorized. Please login again.");
       } else if (error.response?.status === 403) {
         toast.error("You do not have permission to delete this user.");
+      } else if (error.response?.status === 400) {
+        toast.error("Incorrect password");
       } else {
         toast.error("Failed to delete user");
       }
@@ -57,22 +66,25 @@ const UserDetailPage = () => {
   };
 
   const handleSave = async () => {
-    if (!user.name.trim() || !user.email.trim() || !user.role.trim()) {    
+    if (!user.name.trim() || !user.email.trim() || !user.role.trim()) {
       toast.error("Please add a name, email or role");
       return;
     }
 
     const users = JSON.parse(localStorage.getItem("user"));
-
     setSaving(true);
 
     try {
-      await api.put(`/users/${id}`, user,
-      {
-        headers: {
-          Authorization: `Bearer ${users?.token}`,
-        },
-      });
+      await api.put(
+        `/users/${id}`,
+        user,
+        {
+          headers: {
+            Authorization: `Bearer ${users?.token}`,
+          },
+        }
+      );
+
       toast.success("User updated successfully");
       navigate("/users");
     } catch (error) {
@@ -104,12 +116,13 @@ const UserDetailPage = () => {
               <ArrowLeftIcon className="h-5 w-5" />
               Back to Users
             </Link>
-            {users && (
-            <button onClick={handleDelete} className="btn btn-error btn-outline">
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="btn btn-error btn-outline"
+            >
               <Trash2Icon className="h-5 w-5" />
               Delete User
             </button>
-            )}
           </div>
 
           <div className="card bg-base-100">
@@ -124,7 +137,7 @@ const UserDetailPage = () => {
                   className="input input-bordered"
                   value={user.name}
                   onChange={(e) => setUser({ ...user, name: e.target.value })}
-                />                
+                />
               </div>
 
               <div className="form-control mb-4">
@@ -156,14 +169,79 @@ const UserDetailPage = () => {
               </div>
 
               <div className="card-actions justify-end">
-                <button className="btn btn-primary" disabled={saving} onClick={handleSave}>
+                <button
+                  className="btn btn-primary"
+                  disabled={saving}
+                  onClick={handleSave}
+                >
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
-              </div>              
+              </div>
+
             </div>
           </div>
         </div>
       </div>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {showDeleteModal && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-error">Delete User</h3>
+            <p className="py-4">
+              To confirm deletion, please enter your password.
+              This will permanently delete this user and all events created by them.
+            </p>
+
+            {/* PASSWORD FIELD WITH TOGGLE */}
+            <div className="relative mb-4">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                className="input input-bordered w-full"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+              />
+
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/70"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? (
+                  <EyeOff className="size-5" />
+                ) : (
+                  <Eye className="size-5" />
+                )}
+              </button>
+            </div>
+
+            <div className="modal-action">
+              <button
+                className="btn"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletePassword("");
+                  setShowPassword(false);
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="btn btn-error"
+                onClick={() => {
+                  handleDelete();
+                  setShowDeleteModal(false);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

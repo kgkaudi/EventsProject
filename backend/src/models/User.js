@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import validator from "validator";
+import Event from "./Event.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -27,11 +28,10 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 userSchema.statics.signup = async function (name, email, password, role) {
-  //validation
   if (!name || !email || !password || !role) {
     throw Error("You must fill all the fields");
   }
@@ -43,7 +43,6 @@ userSchema.statics.signup = async function (name, email, password, role) {
   }
 
   const exists = await this.findOne({ email });
-
   if (exists) {
     throw Error("Email already in use");
   }
@@ -51,25 +50,27 @@ userSchema.statics.signup = async function (name, email, password, role) {
   const salt = await bcrypt.genSalt(10);
   const hash = await bcrypt.hash(password, salt);
 
-  const user = await this.create({ name, email, password: hash, role: "user" });
+  const user = await this.create({
+    name,
+    email,
+    password: hash,
+    role: "user",
+  });
 
   return user;
 };
 
 userSchema.statics.login = async function (email, password) {
-  //validation
   if (!email || !password) {
     throw Error("You must fill all the fields");
   }
 
   const user = await this.findOne({ email });
-
   if (!user) {
     throw Error("Incorrect email");
   }
 
   const match = await bcrypt.compare(password, user.password);
-
   if (!match) {
     throw Error("Incorrect password");
   }
@@ -77,6 +78,10 @@ userSchema.statics.login = async function (email, password) {
   return user;
 };
 
-const Event = mongoose.model("User", userSchema);
+userSchema.pre("findOneAndDelete", async function () {
+  const userId = this.getQuery()["_id"];
+  await Event.deleteMany({ createdBy: userId });
+});
 
-export default Event;
+const User = mongoose.model("User", userSchema);
+export default User;

@@ -1,49 +1,131 @@
-import { PenSquareIcon, Trash2Icon } from "lucide-react";
+import { PenSquareIcon, Trash2Icon, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router";
 import api from "../lib/axios";
 import toast from "react-hot-toast";
+import { useState } from "react";
 
 const UserCard = ({ user, setUsers }) => {
-  const handleDelete = async (e, id) => {
-    e.preventDefault(); // get rid of the navigation behaviour
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+  const loggedIn = JSON.parse(localStorage.getItem("user"));
+
+  const handleDelete = async (id) => {
+    if (!deletePassword.trim()) {
+      toast.error("Please enter your password to confirm deletion");
+      return;
+    }
 
     try {
-      await api.delete(`/users/${id}`);
-      setUsers((prev) => prev.filter((user) => user._id !== id)); // get rid of the deleted one
+      await api.delete(`/users/${id}`, {
+        headers: { Authorization: `Bearer ${loggedIn?.token}` },
+        data: { password: deletePassword }
+      });
+
+      setUsers((prev) => prev.filter((u) => u._id !== id));
       toast.success("User deleted successfully");
     } catch (error) {
       console.log("Error in handleDelete", error);
-      toast.error("Failed to delete user");
+
+      if (error.response?.status === 400) {
+        toast.error("Incorrect password");
+      } else {
+        toast.error("Failed to delete user");
+      }
     }
   };
 
   return (
-    <Link
-      to={`/user/${user._id}`}
-      className="card bg-base-100 hover:shadow-lg transition-all duration-200 
-      border-t-4 border-solid border-[#00FF9D]"
-    >
-      <div className="card-body">
-        <h3 className="card-title text-base-content">Name: {user.name}</h3>
-        <p className="text-base-content/70 line-clamp-3">Email: {user.email}</p>        
-        <p className="text-base-content/70 line-clamp-3">Role: <span className="user-card-role">{user.role}</span></p>        
-        <div className="card-actions justify-between items-center mt-4">
-          <span className="text-sm text-base-content/60"/>
-          <div className="flex items-center gap-1">
-            <PenSquareIcon className="size-4" />
-            <button
-              className="btn btn-ghost btn-xs text-error"
-              onClick={(e) => handleDelete(e, user._id)}
-            >
-              <Trash2Icon className="size-4" />
-            </button>
+    <>
+      {/* CARD */}
+      <Link
+        to={`/user/${user._id}`}
+        className="card bg-base-100 hover:shadow-lg transition-all duration-200 
+        border-t-4 border-solid border-[#00FF9D]"
+      >
+        <div className="card-body">
+          <h3 className="card-title text-base-content">Name: {user.name}</h3>
+          <p className="text-base-content/70">Email: {user.email}</p>
+          <p className="text-base-content/70">
+            Role: <span className="user-card-role">{user.role}</span>
+          </p>
+
+          <div className="card-actions justify-between items-center mt-4">
+            <span className="text-sm text-base-content/60" />
+
+            <div className="flex items-center gap-1">
+              <PenSquareIcon className="size-4" />
+
+              <button
+                className="btn btn-ghost btn-xs text-error"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowDeleteModal(true);
+                }}
+              >
+                <Trash2Icon className="size-4" />
+              </button>
+            </div>
           </div>
-          
         </div>
-      </div>
-    </Link>
+      </Link>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {showDeleteModal && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg text-error">Delete User</h3>
+            <p className="py-4">
+              To confirm deletion, please enter your password.
+              This will permanently delete this user and all events created by them.
+            </p>
+
+            {/* PASSWORD FIELD WITH TOGGLE */}
+            <div className="relative mb-4">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                className="input input-bordered w-full"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+              />
+
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/70"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+              </button>
+            </div>
+
+            <div className="modal-action">
+              <button
+                className="btn"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeletePassword("");
+                  setShowPassword(false);
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="btn btn-error"
+                onClick={() => {
+                  handleDelete(user._id);
+                  setShowDeleteModal(false);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 export default UserCard;
