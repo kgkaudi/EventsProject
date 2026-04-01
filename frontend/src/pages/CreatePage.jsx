@@ -10,6 +10,8 @@ const CreatePage = () => {
   const [location, setLocation] = useState("");
   const [maxcapacity, setMaxcapacity] = useState("");
   const [date, setDate] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -37,18 +39,23 @@ const CreatePage = () => {
 
     setLoading(true);
     try {
-      await api.post("/events", {
-        title,
-        content,
-        location,
-        maxcapacity,
-        date,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
+      await api.post(
+        "/events",
+        {
+          title,
+          content,
+          location,
+          maxcapacity,
+          date,
+          categories,
+          tags,
         },
-      });
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
 
       toast.success("Event created successfully!");
       navigate("/");
@@ -133,6 +140,30 @@ const CreatePage = () => {
                     className="input input-bordered"
                     value={maxcapacity}
                     onChange={(e) => setMaxcapacity(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-control mb-4">
+                  <label className="label">
+                    <span className="label-text">Categories (comma separated)</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="input input-bordered"
+                    placeholder="Music, Sports, Tech"
+                    onChange={(e) => setCategories(e.target.value.split(",").map(c => c.trim()))}
+                  />
+                </div>
+
+                <div className="form-control mb-4">
+                  <label className="label">
+                    <span className="label-text">Tags (comma separated)</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="input input-bordered"
+                    placeholder="Free, Outdoor, Family"
+                    onChange={(e) => setTags(e.target.value.split(",").map(t => t.trim()))}
                   />
                 </div>
 

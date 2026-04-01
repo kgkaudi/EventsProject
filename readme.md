@@ -2,9 +2,11 @@
 
 A full‑stack **Events Management Platform** built with the **MERN** stack.  
 Users can register, log in, create events, update them, delete them, and browse events created by others.  
+Events support **categories**, **tags**, and **rich metadata**, making the platform scalable and easy to navigate.
+
 The backend includes **JWT authentication**, **role‑based logic**, **MongoDB models**, and a fully tested API using **Jest**, **Supertest**, and **MongoDB Memory Server**.
 
-This project demonstrates clean architecture, modular controllers, reusable middleware, and production‑grade testing.
+The frontend is built with **React**, featuring a clean UI, owner‑only editing, and dynamic event cards with category/tag badges.
 
 ---
 
@@ -19,14 +21,17 @@ This project demonstrates clean architecture, modular controllers, reusable midd
 - Update password
 - Delete user
 - Fetch all users / single user
+- Role support (user / admin)
 
 ### 🎉 Event Management
 - Create event
-- Update event
-- Delete event
+- Update event (owner‑only)
+- Delete event (owner‑only)
 - Fetch all events
 - Fetch single event
 - Events linked to the user who created them
+- **Categories (e.g., Music, Sports, Tech)**
+- **Tags (e.g., Free, Outdoor, Family)**
 
 ### 🔐 Authentication & Security
 - JWT‑based authentication
@@ -34,6 +39,19 @@ This project demonstrates clean architecture, modular controllers, reusable midd
 - Protected event routes
 - Secure password hashing
 - Input validation
+- Owner‑only edit/delete enforcement
+
+### 🖥️ Frontend Features
+- React + React Router
+- Clean UI with DaisyUI / Tailwind
+- Event cards with:
+  - Category badges
+  - Tag badges
+  - Created by / created at metadata
+- Owner‑only edit/delete buttons
+- Clickable event cards (no nested links)
+- Create & edit pages with validation
+- Toast notifications for all actions
 
 ### 🧪 Testing (Full Coverage)
 - **Unit tests** for routes & middleware  
@@ -49,9 +67,10 @@ This project demonstrates clean architecture, modular controllers, reusable midd
 
 ### Frontend
 - React
-- Material UI
+- TailwindCSS + DaisyUI
 - React Router
 - Axios
+- React Hot Toast
 
 ### Backend
 - Node.js
@@ -125,12 +144,11 @@ MONGO_URI = mongodb://localhost:27017/KostasEvents
 PORT = 5001
 
 UPSTASH_REDIS_REST_URL = https://rapid-satyr-39656.upstash.io
-UPSTASH_REDIS_REST_TOKEN = AZroAAIncDIzNmMzYTMyNjc1NDA0NmQ5YWQyZmFjMmRkN2I1ZWI1NHAyMzk2NTY
+UPSTASH_REDIS_REST_TOKEN = <your_token_here>
 
 NODE_ENV = development
 
-SECRET=2HDqw3PAWSXCZMfVuMDMjJRwMiA3clWV4yc1oZ4cYIv
-
+SECRET = <your_jwt_secret>
 ```
 
 ### 4️⃣ Start the backend
@@ -172,6 +190,7 @@ npm run test:watch
 3. Protected routes require `Authorization: Bearer <token>`  
 4. `requireAuth` verifies token and attaches `req.user`  
 5. Controllers use `req.user._id` to authorize actions  
+6. Only event owners can update/delete their events  
 
 ---
 
@@ -189,6 +208,8 @@ npm run test:watch
 - content  
 - location  
 - maxcapacity  
+- categories
+- tags
 - date  
 - createdBy (user reference)  
 - timestamps  
@@ -214,17 +235,19 @@ npm run test:watch
 | GET | `/events` | Get all events |
 | GET | `/events/:id` | Get event |
 | POST | `/events` | Create event (auth required) |
-| PUT | `/events/:id` | Update event |
-| DELETE | `/events/:id` | Delete event |
+| PUT | `/events/:id` | Update event (owner only) |
+| DELETE | `/events/:id` | Delete event (owner only) |
 
 ---
 
 ## 🧩 Future Improvements
 
-- Event categories & tags  
-- Email notifications  
-- Pagination & search  
+- Event categories & tags filtering  
+- Search by title, category, or tag  
+- Pagination & infinite scroll  
 - Image uploads for events  
+- User profiles with event history  
+- Admin dashboard  
 
 ---
 

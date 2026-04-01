@@ -190,6 +190,50 @@ const EventDetailPage = () => {
 
               <div className="form-control mb-4">
                 <label className="label">
+                  <span className="label-text">Categories</span>
+                </label>
+
+                {isOwner ? (
+                  <input
+                    type="text"
+                    className="input input-bordered"
+                    value={event.categories?.join(", ") ?? ""}
+                    onChange={(e) =>
+                      setEvent({
+                        ...event,
+                        categories: e.target.value.split(",").map((c) => c.trim())
+                      })
+                    }
+                  />
+                ) : (
+                  <p className="label-text">{event.categories?.join(", ") || "-"}</p>
+                )}
+              </div>
+
+              <div className="form-control mb-4">
+                <label className="label">
+                  <span className="label-text">Tags</span>
+                </label>
+
+                {isOwner ? (
+                  <input
+                    type="text"
+                    className="input input-bordered"
+                    value={event.tags?.join(", ") ?? ""}
+                    onChange={(e) =>
+                      setEvent({
+                        ...event,
+                        tags: e.target.value.split(",").map((t) => t.trim())
+                      })
+                    }
+                  />
+                ) : (
+                  <p className="label-text">{event.tags?.join(", ") || "-"}</p>
+                )}
+              </div>
+
+              <div className="form-control mb-4">
+                <label className="label">
                   <span className="label-text">Date: {eventDate}</span>
                 </label>
 

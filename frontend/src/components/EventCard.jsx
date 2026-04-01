@@ -1,5 +1,5 @@
 import { PenSquareIcon, Trash2Icon } from "lucide-react";
-import { useNavigate, Link } from "react-router";
+import { useNavigate } from "react-router";
 import { formatDate, formatLocalDateTime } from "../lib/utils";
 import api from "../lib/axios";
 import { useAuthContext } from "../hooks/useAuthContext";
@@ -12,7 +12,7 @@ const EventCard = ({ event, setEvents }) => {
   const isOwner = user?.user?.id === event.createdBy?._id;
 
   const handleDelete = async (e, id) => {
-    e.stopPropagation(); // prevent card click
+    e.stopPropagation();
     e.preventDefault();
 
     if (!window.confirm("Are you sure you want to delete this event?")) return;
@@ -40,6 +40,26 @@ const EventCard = ({ event, setEvents }) => {
         <p className="text-base-content/70">Max Capacity: {event.maxcapacity ?? "-"}</p>
         <p className="text-base-content/70">Date: {formatLocalDateTime(event.date)}</p>
 
+        {event.categories?.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {event.categories.map((cat, i) => (
+              <span key={i} className="badge badge-primary badge-outline">
+                {cat}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {event.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {event.tags.map((tag, i) => (
+              <span key={i} className="badge badge-secondary badge-outline">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className="card-actions justify-between items-center mt-4">
           <span className="text-sm text-base-content/60">
             Created By: {event.createdBy?.name ?? "-"}
@@ -52,8 +72,6 @@ const EventCard = ({ event, setEvents }) => {
 
           {isOwner && (
             <div className="flex items-center gap-1">
-
-              {/* DELETE BUTTON */}
               <button
                 className="btn btn-ghost btn-xs text-error"
                 onClick={(e) => handleDelete(e, event._id)}

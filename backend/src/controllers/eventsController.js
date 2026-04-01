@@ -46,13 +46,15 @@ export async function createEvent(req, res) {
 
     const createdBy = user._id;
 
-    const { title, content, location, maxcapacity, date } = req.body;
+    const { title, content, location, maxcapacity, categories, tags, date } = req.body;
 
     const newEvent = new Event({
       title,
       content,
       location,
       maxcapacity,
+      categories,
+      tags,
       date,
       createdBy,
     });
@@ -85,12 +87,14 @@ export async function updateEvent(req, res) {
     }
 
     // Apply updates
-    const { title, content, location, maxcapacity, date } = req.body;
+    const { title, content, location, maxcapacity, categories, tags, date } = req.body;
 
     event.title = title ?? event.title;
     event.content = content ?? event.content;
     event.location = location ?? event.location;
     event.maxcapacity = maxcapacity ?? event.maxcapacity;
+    event.categories = categories ?? event.categories;
+    event.tags = tags ?? event.tags;
     event.date = date ?? event.date;
 
     const updated = await event.save();
