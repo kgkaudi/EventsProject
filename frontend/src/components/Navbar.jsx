@@ -71,6 +71,12 @@ const Navbar = () => {
                       </Link>
                     )}
 
+                    {user && user.user.role === "admin" && (
+                      <Link to="/admin/analytics" className="btn btn-ghost w-full justify-start">
+                        Analytics
+                      </Link>
+                    )}
+
                     <Link
                       to="/create"
                       className="btn btn-ghost w-full justify-start"
@@ -145,6 +151,12 @@ const Navbar = () => {
               >
                 <User className="size-5" />
                 Users
+              </Link>
+            )}
+
+            {user && user.user.role === "admin" && (
+              <Link to="/admin/analytics" className="btn btn-primary w-full">
+                Analytics
               </Link>
             )}
 

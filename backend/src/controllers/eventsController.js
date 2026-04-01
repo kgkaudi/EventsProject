@@ -151,3 +151,18 @@ export async function getEvent(req, res) {
     res.status(500).json({ meassage: "Internal server error" });
   }
 }
+
+export const getEventStats = async (req, res) => {
+  try {
+    const totalEvents = await Event.countDocuments();
+
+    const eventsPerUser = await Event.aggregate([
+      { $group: { _id: "$createdBy", count: { $sum: 1 } } }
+    ]);
+
+    res.json({ totalEvents, eventsPerUser });
+  } catch (error) {
+    console.error("Error in getEventStats", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

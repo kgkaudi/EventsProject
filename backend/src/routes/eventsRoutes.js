@@ -1,17 +1,28 @@
 import express from "express";
-import { getAllEvents, createEvent, updateEvent, deleteEvent, getEvent, getMyEvents} from "../controllers/eventsController.js";
+import {
+  getAllEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  getEvent,
+  getMyEvents,
+  getEventStats
+} from "../controllers/eventsController.js";
 import requireAuth from "../middleware/requireAuth.js";
+import adminOnly from "../middleware/adminOnly.js";
 
 const router = express.Router();
 
-//events routes
+// Public routes
 router.get("/", getAllEvents);
-router.get("/:id", getEvent)
-router.use(requireAuth)
-router.get("/mine", requireAuth, getMyEvents);
-router.post("/", createEvent);
-router.put("/:id", updateEvent)
-router.delete("/:id", deleteEvent)
+router.get("/stats", requireAuth, adminOnly, getEventStats);
+router.get("/:id", getEvent);
 
+// Protected routes
+router.use(requireAuth);
+router.get("/mine", getMyEvents);
+router.post("/", createEvent);
+router.put("/:id", updateEvent);
+router.delete("/:id", deleteEvent);
 
 export default router;

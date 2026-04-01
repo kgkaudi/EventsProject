@@ -12,6 +12,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import { UsersPage } from './pages/UsersPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import ChangePasswordPage from './pages/ChangePaswordPage';
+import AdminAnalytics from "./pages/AdminAnalytics.jsx";
 
 const App = () => {
   const { user } = useAuthContext()
@@ -28,6 +29,7 @@ const App = () => {
         <Route path="/user/:id" element={user && user.user.role === "admin" ? <UserDetailPage /> : <Navigate to="/" />}/>
         <Route path="/profile/:id" element={user? <ProfilePage /> : <Navigate to="/" />}/>
         <Route path="/change-password/:id" element={user? <ChangePasswordPage /> : <Navigate to="/" />}/>
+        <Route path="/admin/analytics" element={ user && user.user.role === "admin" ? <AdminAnalytics /> : <Navigate to="/" />}/>
       </Routes>
     </div>
   )
