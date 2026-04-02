@@ -13,12 +13,18 @@ export const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [isRateLimited, setIsRateLimited] = useState(false);
+  const [search, setSearch] = useState("");
+  const [location, setLocation] = useState("");
+  const [date, setDate] = useState("");
+  const [query, setQuery] = useState("");
 
   const eventsContainerRef = useRef(null);
 
   const fetchEvents = async (pageNumber) => {
     try {
-      const res = await api.get(`/events?page=${pageNumber}&limit=9`);
+      const res = await api.get(
+        `/events?page=${pageNumber}&limit=9&q=${query}`
+      );
 
       if (pageNumber === 1) {
         setEvents(res.data.events);
@@ -57,8 +63,9 @@ export const HomePage = () => {
   };
 
   useEffect(() => {
+    setPage(1);
     fetchEvents(1);
-  }, []);
+  }, [query]);
 
   const handleLoadMore = () => {
     if (eventsContainerRef.current) {
@@ -82,6 +89,27 @@ export const HomePage = () => {
         {loading && events.length === 0 && (
           <div className="text-center text-primary py-10">Loading events...</div>
         )}
+
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <input
+            type="text"
+            placeholder="Search events (title, tags, categories, location, date)..."
+            className="input input-bordered w-full mb-6"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+
+          <button
+            className="btn btn-outline"
+            onClick={() => {
+              setQuery("");
+              setPage(1);
+              fetchEvents(1);
+            }}
+          >
+            Clear
+          </button>
+        </div>
 
         {events.length === 0 && !loading && !isRateLimited && <EventsNotFound />}
 
