@@ -134,6 +134,7 @@ frontend/src/pages/UsersPage.jsx
 ```
 backend/
 │── src/
+│   ├── config/
 │   ├── controllers/
 │   ├── middleware/
 │   ├── models/
@@ -143,11 +144,11 @@ backend/
 │── tests/
 │   ├── integration/
 │   ├── middleware/
-│   └── routes/
+│   ├── routes/
+│   └── setup/
 │
 │── package.json
 │── jest.config.js
-│── README.md
 ```
 
 ---
