@@ -2,9 +2,9 @@
 
 A full‑stack **Events Management Platform** built with the **MERN** stack.  
 Users can register, authenticate, create events, update them, delete them, and browse events created by others.  
-The backend includes **JWT authentication**, **role‑based access**, **owner‑only permissions**, and a fully tested API using **Jest**, **Supertest**, and **MongoDB Memory Server**.
+The backend includes **JWT authentication**, **role‑based access**, **owner‑only permissions**, rate‑limit handling, and a fully tested API using **Jest**, **Supertest**, and **MongoDB Memory Server**.
 
-The frontend is built with **React + TailwindCSS + DaisyUI**, offering a clean UI, modals, password toggles, and a smooth user experience.
+The frontend is built with **React + TailwindCSS + DaisyUI**, offering a clean UI, modals, password toggles, smart search, pagination, and a smooth user experience.
 
 ---
 
@@ -53,10 +53,40 @@ frontend/src/pages/UsersPage.jsx
 - Create events
 - Update events (owner‑only)
 - Delete events (owner‑only)
-- Fetch all events
+- Fetch all events (with pagination)
 - Fetch single event
 - Fetch events created by the logged‑in user
 - Events linked to the user who created them
+- Categories & tags support
+- Smart unified search (title, content, location, tags, categories, date)
+
+---
+
+## 🔍 Smart Search (Unified Search Bar)
+
+The platform includes a single intelligent search field that matches:
+
+- Event title  
+- Event content  
+- Location  
+- Categories  
+- Tags  
+- Exact dates (`2025‑04‑01`)  
+- Natural date formats (`April 5`)  
+
+Search works seamlessly with pagination and the Load More button.
+
+---
+
+## 📄 Pagination & Load More
+
+The events page supports:
+
+- Page‑based backend pagination  
+- “Load More” button  
+- Smooth scroll to newly loaded items  
+- Graceful empty states  
+- Rate‑limit handling  
 
 ---
 
@@ -80,6 +110,8 @@ frontend/src/pages/UsersPage.jsx
 - Delete confirmation modal with password input
 - Password visibility toggle
 - Toast notifications for all actions
+- Unified search bar
+- Pagination + Load More + smooth scroll
 
 ---
 
@@ -232,6 +264,8 @@ npm run test:watch
 - location  
 - maxcapacity  
 - date  
+- categories  
+- tags  
 - createdBy (user reference)  
 - timestamps  
 
@@ -254,7 +288,7 @@ npm run test:watch
 ### Events
 | Method | Endpoint | Description |
 |--------|-----------|-------------|
-| GET | `/events` | Get all events |
+| GET | `/events` | Get all events (search + pagination) |
 | GET | `/events/:id` | Get event |
 | GET | `/events/mine` | Get events created by logged‑in user |
 | POST | `/events` | Create event (auth required) |
@@ -266,12 +300,15 @@ npm run test:watch
 
 ## 🧩 Future Improvements
 
-- Event search (title, location)
-- Pagination & infinite scroll
-- Image uploads
-- User profile pages
-- Enhanced admin analytics
-- Event categories & tags
+- Image uploads for events (Cloudinary / S3)
+- User profile pages with editable info
+- Enhanced admin analytics (charts, insights)
+- Natural language search (“next Friday”, “this weekend”)
+- Advanced filters (capacity, category chips)
+- Event bookmarking / favorites
+- Social sharing (copy link, share to social)
+- Event comments or discussion threads
+- Email notifications (event reminders, updates)
 
 ---
 
