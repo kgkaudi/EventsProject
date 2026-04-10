@@ -2,8 +2,10 @@ import { ArrowLeftIcon } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate, useParams } from "react-router";
-import api, { BASE_URL } from "../lib/axios";
-import { useAuthContext } from "../hooks/useAuthContext";
+
+import { useDispatch } from "react-redux";
+import { changePassword } from "../store/slices/usersSlice";
+
 import PasswordInput from "../components/PasswordInput";
 
 const ChangePasswordPage = () => {
@@ -11,13 +13,12 @@ const ChangePasswordPage = () => {
   const [newpassword, setNewpassword] = useState("");
   const [repeatpassword, setRepeatpassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  const { dispatch } = useAuthContext();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!password.trim() || !newpassword.trim() || !repeatpassword.trim()) {
@@ -30,37 +31,30 @@ const ChangePasswordPage = () => {
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem("user"));
-
     setLoading(true);
-    setError(null);
 
-    try {
-      await api.put(
-        `/users/change-password/${id}`,
-        {
-          password: password,
-          newPassword: newpassword,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${users?.token}`,
-          },
+    dispatch(
+      changePassword({
+        id,
+        password,
+        newPassword: newpassword,
+      })
+    )
+      .unwrap()
+      .then(() => {
+        toast.success("Password updated successfully");
+        navigate(`/profile/${id}`);
+      })
+      .catch((err) => {
+        console.log("Error updating password:", err);
+
+        if (err?.status === 401) {
+          toast.error("Unauthorized. Please login again.");
+        } else {
+          toast.error(err?.message || "Failed to update password");
         }
-      );
-
-      toast.success("Password updated successfully");
-      navigate(`/profile/${id}`);
-    } catch (error) {
-      console.log("Error saving the user:", error);
-      if (error.response?.status === 401) {
-        toast.error("Unauthorized. Please login again.");
-      } else {
-        toast.error("Failed to update user");
-      }
-    } finally {
-      setLoading(false);
-    }
+      })
+      .finally(() => setLoading(false));
   };
 
   return (
@@ -106,9 +100,6 @@ const ChangePasswordPage = () => {
                 </div>
               </form>
 
-              {error && (
-                <p className="text-red-500 text-sm mt-2">{error}</p>
-              )}
             </div>
           </div>
         </div>

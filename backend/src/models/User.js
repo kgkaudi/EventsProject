@@ -31,8 +31,8 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.statics.signup = async function (name, email, password, role) {
-  if (!name || !email || !password || !role) {
+userSchema.statics.signup = async function (name, email, password) {
+  if (!name || !email || !password) {
     throw Error("You must fill all the fields");
   }
   if (!validator.isEmail(email)) {

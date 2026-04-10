@@ -2,20 +2,21 @@ import { ArrowLeftIcon } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router";
-import { BASE_URL } from "../lib/axios";
-import { useAuthContext } from "../hooks/useAuthContext";
 import PasswordInput from "../components/PasswordInput";
 
-const LoginPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const { login } = useAuthContext();
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser } from "../store/slices/authSlice";
 
+const LoginPage = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const { loading, error } = useSelector((state) => state.auth);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = (e) => {
     e.preventDefault();
 
     if (!email.trim() || !password.trim()) {
@@ -23,31 +24,15 @@ const LoginPage = () => {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
-    const response = await fetch(`${BASE_URL}/users/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const json = await response.json();
-
-    if (!response.ok) {
-      setLoading(false);
-      setError(json.error);
-      toast.error(json.error);
-    }
-
-    if (response.ok) {
-      localStorage.setItem("user", JSON.stringify(json));
-      login(json);
-      setLoading(false);
-
-      toast.success("User logged in successfully!");
-      navigate("/");
-    }
+    dispatch(loginUser({ email, password }))
+      .unwrap()
+      .then(() => {
+        toast.success("User logged in successfully!");
+        navigate("/");
+      })
+      .catch((err) => {
+        toast.error(err);
+      });
   };
 
   return (

@@ -1,62 +1,48 @@
 import { PenSquareIcon, Trash2Icon, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router";
-import api from "../lib/axios";
 import toast from "react-hot-toast";
 import { useState } from "react";
 
-const UserCard = ({ user, setUsers }) => {
+import { useDispatch, useSelector } from "react-redux";
+import { deleteUser, updateUserRole } from "../store/slices/usersSlice";
+
+const UserCard = ({ user }) => {
+  const dispatch = useDispatch();
+  const loggedIn = useSelector((state) => state.auth.user);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const loggedIn = JSON.parse(localStorage.getItem("user"));
-
-  const handleDelete = async (id) => {
+  const handleDelete = () => {
     if (!deletePassword.trim()) {
       toast.error("Please enter your password to confirm deletion");
       return;
     }
 
-    try {
-      await api.delete(`/users/${id}`, {
-        headers: { Authorization: `Bearer ${loggedIn?.token}` },
-        data: { password: deletePassword }
+    dispatch(deleteUser({ id: user._id, password: deletePassword }))
+      .unwrap()
+      .then(() => {
+        toast.success("User deleted successfully");
+      })
+      .catch((error) => {
+        if (error?.status === 400) {
+          toast.error("Incorrect password");
+        } else {
+          toast.error("Failed to delete user");
+        }
       });
-
-      setUsers((prev) => prev.filter((u) => u._id !== id));
-      toast.success("User deleted successfully");
-    } catch (error) {
-      console.log("Error in handleDelete", error);
-
-      if (error.response?.status === 400) {
-        toast.error("Incorrect password");
-      } else {
-        toast.error("Failed to delete user");
-      }
-    }
   };
 
-  const handleRoleChange = async (id, newRole) => {
-  try {
-    const res = await api.put(
-      `/users/${id}/role`,
-      { role: newRole },
-      { headers: { Authorization: `Bearer ${loggedIn?.token}` } }
-    );
-
-    setUsers((prev) =>
-      prev.map((u) => (u._id === id ? { ...u, role: newRole } : u))
-    );
-
-    toast.success(`Role updated to ${newRole}`);
-  } catch (error) {
-    toast.error("Failed to update role");
-  }
-};
+  const handleRoleChange = (newRole) => {
+    dispatch(updateUserRole({ id: user._id, role: newRole }))
+      .unwrap()
+      .then(() => toast.success(`Role updated to ${newRole}`))
+      .catch(() => toast.error("Failed to update role"));
+  };
 
   return (
     <>
-      {/* CARD */}
       <Link
         to={`/user/${user._id}`}
         className="card bg-base-100 hover:shadow-lg transition-all duration-200 
@@ -65,19 +51,20 @@ const UserCard = ({ user, setUsers }) => {
         <div className="card-body">
           <h3 className="card-title text-base-content">Name: {user.name}</h3>
           <p className="text-base-content/70">Email: {user.email}</p>
-          <p className="text-base-content/70">
+
+          <div className="text-base-content/70">
             <div className="flex items-center gap-2">
               <span className="font-semibold">Role:</span>
               <span className="badge badge-outline">{user.role}</span>
 
-              {loggedIn.user.role === "admin" && (
+              {loggedIn?.user?.role === "admin" && (
                 <div className="flex gap-1">
                   <button
                     className="btn btn-xs btn-success"
                     disabled={user.role === "admin"}
                     onClick={(e) => {
                       e.preventDefault();
-                      handleRoleChange(user._id, "admin");
+                      handleRoleChange("admin");
                     }}
                   >
                     Promote
@@ -88,7 +75,7 @@ const UserCard = ({ user, setUsers }) => {
                     disabled={user.role === "user"}
                     onClick={(e) => {
                       e.preventDefault();
-                      handleRoleChange(user._id, "user");
+                      handleRoleChange("user");
                     }}
                   >
                     Demote
@@ -96,7 +83,7 @@ const UserCard = ({ user, setUsers }) => {
                 </div>
               )}
             </div>
-          </p>
+          </div>
 
           <div className="card-actions justify-between items-center mt-4">
             <span className="text-sm text-base-content/60" />
@@ -118,7 +105,6 @@ const UserCard = ({ user, setUsers }) => {
         </div>
       </Link>
 
-      {/* DELETE CONFIRMATION MODAL */}
       {showDeleteModal && (
         <div className="modal modal-open">
           <div className="modal-box">
@@ -128,7 +114,6 @@ const UserCard = ({ user, setUsers }) => {
               This will permanently delete this user and all events created by them.
             </p>
 
-            {/* PASSWORD FIELD WITH TOGGLE */}
             <div className="relative mb-4">
               <input
                 type={showPassword ? "text" : "password"}
@@ -162,7 +147,7 @@ const UserCard = ({ user, setUsers }) => {
               <button
                 className="btn btn-error"
                 onClick={() => {
-                  handleDelete(user._id);
+                  handleDelete();
                   setShowDeleteModal(false);
                 }}
               >

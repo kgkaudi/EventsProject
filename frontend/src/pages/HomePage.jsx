@@ -1,42 +1,49 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Navbar from "../components/Navbar";
 import RateLimitedUi from "../components/RateLimitedUI";
 import EventsNotFound from "../components/EventsNotFound";
 import EventCard from "../components/EventCard";
-import api from "../lib/axios";
-import toast from "react-hot-toast";
 
-export const HomePage = () => {
-  const [events, setEvents] = useState([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(true);
+import { useDispatch, useSelector } from "react-redux";
+import { fetchEvents, setQuery, resetEvents } from "../store/slices/eventsSlice";
+
+const HomePage = () => {
+  const dispatch = useDispatch();
+
+  const { events, page, query, hasMore, loading } = useSelector(
+    (state) => state.events
+  );
+
   const [loadingMore, setLoadingMore] = useState(false);
   const [isRateLimited, setIsRateLimited] = useState(false);
-  const [search, setSearch] = useState("");
-  const [location, setLocation] = useState("");
-  const [date, setDate] = useState("");
-  const [query, setQuery] = useState("");
 
   const eventsContainerRef = useRef(null);
 
-  const fetchEvents = async (pageNumber) => {
-    try {
-      const res = await api.get(
-        `/events?page=${pageNumber}&limit=9&q=${query}`
-      );
+  // Fetch events on first load + whenever query changes
+  useEffect(() => {
+    dispatch(resetEvents());
+    dispatch(fetchEvents({ page: 1, query }))
+      .unwrap()
+      .then(() => setIsRateLimited(false))
+      .catch((err) => {
+        if (err?.status === 429) setIsRateLimited(true);
+      });
+  }, [query, dispatch]);
 
-      if (pageNumber === 1) {
-        setEvents(res.data.events);
-      } else {
-        setEvents((prev) => [...prev, ...res.data.events]);
-      }
+  // Load more handler
+  const handleLoadMore = () => {
+    if (eventsContainerRef.current) {
+      const { scrollHeight } = eventsContainerRef.current;
+      eventsContainerRef.current.dataset.prevHeight = scrollHeight;
+    }
 
-      setHasMore(res.data.hasMore);
-      setIsRateLimited(false);
+    setLoadingMore(true);
 
-      // Smooth scroll only when loading more
-      if (pageNumber > 1) {
+    dispatch(fetchEvents({ page, query }))
+      .unwrap()
+      .then(() => {
+        setIsRateLimited(false);
+
         setTimeout(() => {
           const container = eventsContainerRef.current;
           if (!container) return;
@@ -48,35 +55,11 @@ export const HomePage = () => {
             behavior: "smooth",
           });
         }, 50);
-      }
-    } catch (error) {
-      console.log("Error fetching events", error);
-      if (error.response?.status === 429) {
-        setIsRateLimited(true);
-      } else {
-        toast.error("Failed to load events");
-      }
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
-  useEffect(() => {
-    setPage(1);
-    fetchEvents(1);
-  }, [query]);
-
-  const handleLoadMore = () => {
-    if (eventsContainerRef.current) {
-      const { scrollHeight } = eventsContainerRef.current;
-      eventsContainerRef.current.dataset.prevHeight = scrollHeight;
-    }
-
-    setLoadingMore(true);
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchEvents(nextPage);
+      })
+      .catch((err) => {
+        if (err?.status === 429) setIsRateLimited(true);
+      })
+      .finally(() => setLoadingMore(false));
   };
 
   return (
@@ -86,30 +69,31 @@ export const HomePage = () => {
       {isRateLimited && <RateLimitedUi />}
 
       <div className="max-w-7xl mx-auto p-4 mt-6">
-        {loading && events.length === 0 && (
-          <div className="text-center text-primary py-10">Loading events...</div>
-        )}
 
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex gap-4 mb-6">
           <input
             type="text"
             placeholder="Search events (title, tags, categories, location, date)..."
-            className="input input-bordered w-full mb-6"
+            className="input input-bordered w-full"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => dispatch(setQuery(e.target.value))}
           />
 
           <button
             className="btn btn-outline"
             onClick={() => {
-              setQuery("");
-              setPage(1);
-              fetchEvents(1);
+              dispatch(setQuery(""));
+              dispatch(resetEvents());
+              dispatch(fetchEvents({ page: 1, query: "" }));
+              window.scrollTo({ top: 0, behavior: "smooth" });
             }}
           >
             Clear
           </button>
         </div>
+        {loading && events.length === 0 && (
+          <div className="text-center text-primary py-10">Loading events...</div>
+        )}
 
         {events.length === 0 && !loading && !isRateLimited && <EventsNotFound />}
 
@@ -120,7 +104,7 @@ export const HomePage = () => {
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
               {events.map((event) => (
-                <EventCard key={event._id} event={event} setEvents={setEvents} />
+                <EventCard key={event._id} event={event} />
               ))}
             </div>
 
@@ -141,3 +125,4 @@ export const HomePage = () => {
     </div>
   );
 };
+export default HomePage;

@@ -1,105 +1,117 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import api from "../lib/axios";
-import { formatLocalDateTime } from "../lib/utils";
-import toast from "react-hot-toast";
-import { useAuthContext } from "../hooks/useAuthContext";
 import { ArrowLeftIcon, LoaderIcon, Trash2Icon } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchEventById,
+  updateEvent,
+  removeEvent,
+} from "../store/slices/eventsSlice";
+
+import { formatLocalDateTime } from "../lib/utils";
+import api from "../lib/axios";
 
 const EventDetailPage = () => {
-  const [event, setEvent] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  const { user } = useAuthContext();
-  const navigate = useNavigate();
   const { id } = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
+  const { singleEvent, singleLoading } = useSelector((s) => s.events);
+  const user = useSelector((s) => s.auth.user);
+
+  const [form, setForm] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const isOwner = user?.user?.id === singleEvent?.createdBy?._id;
+
+  // Fetch event on mount
   useEffect(() => {
-    const fetchEvent = async () => {
-      try {
-        const res = await api.get(`/events/${id}`);
-        setEvent(res.data);
-      } catch (error) {
-        console.log("Error in fetching event", error);
-        toast.error("Failed to fetch the event");
-      } finally {
-        setLoading(false);
-      }
-    };
+    dispatch(fetchEventById(id));
+  }, [id, dispatch]);
 
-    fetchEvent();
-  }, [id]);
-
-  const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this event?")) return;
-
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-
-    try {
-      await api.delete(`/events/${id}`, {
-        headers: {
-          Authorization: `Bearer ${storedUser?.token}`,
-        },
+  // Sync form when event loads
+  useEffect(() => {
+    if (singleEvent) {
+      setForm({
+        title: singleEvent.title ?? "",
+        content: singleEvent.content ?? "",
+        location: singleEvent.location ?? "",
+        maxcapacity: singleEvent.maxcapacity ?? "",
+        categories: singleEvent.categories?.join(", ") ?? "",
+        tags: singleEvent.tags?.join(", ") ?? "",
+        date: singleEvent.date?.slice(0, 16) ?? "",
       });
+    }
+  }, [singleEvent]);
 
+  // Delete event (modal version)
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/events/${id}`);
+      dispatch(removeEvent(id));
       toast.success("Event deleted");
       navigate("/");
     } catch (error) {
-      console.log("Error deleting the event:", error);
-      if (error.response?.status === 401) {
-        toast.error("Unauthorized. Please login again.");
-      } else if (error.response?.status === 403) {
-        toast.error("You do not have permission to delete this event.");
-      } else {
-        toast.error("Failed to delete event");
-      }
+      console.log("Error deleting event:", error);
+      toast.error(error.response?.data?.message || "Failed to delete event");
+    } finally {
+      setShowConfirm(false);
     }
   };
 
   const handleSave = async () => {
     if (
-      !event.title.trim() ||
-      !event.content.trim() ||
-      !event.location.trim() ||
-      !event.date.trim()
+      !form.title.trim() ||
+      !form.content.trim() ||
+      !form.location.trim() ||
+      !form.date.trim()
     ) {
-      toast.error("Please add a title, content, location, maximum capacity or date");
+      toast.error("Please fill all required fields");
       return;
     }
 
-    const storedUser = JSON.parse(localStorage.getItem("user"));
     setSaving(true);
 
-    try {
-      await api.put(`/events/${id}`, event, {
-        headers: {
-          Authorization: `Bearer ${storedUser?.token}`,
+    dispatch(
+      updateEvent({
+        id,
+        data: {
+          ...form,
+          categories: form.categories
+            .split(",")
+            .map((c) => c.trim())
+            .filter(Boolean),
+          tags: form.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
         },
-      });
-      toast.success("Event updated successfully");
-      navigate("/");
-    } catch (error) {
-      console.log("Error saving the event:", error);
-      if (error.response?.status === 401) {
-        toast.error("Unauthorized. Please login again.");
-      } else {
-        toast.error("Failed to update event");
-      }
-    } finally {
-      setSaving(false);
-    }
+      })
+    )
+      .unwrap()
+      .then(() => {
+        toast.success("Event updated successfully");
+        navigate("/");
+      })
+      .catch((err) => {
+        console.log("Error updating event:", err);
+        toast.error(err?.message || "Failed to update event");
+      })
+      .finally(() => setSaving(false));
   };
 
-  if (loading) {
+  if (singleLoading || !form) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <LoaderIcon className="animate-spin size-10" />
       </div>
     );
   }
-  const eventDate = formatLocalDateTime(event.date);
-  const isOwner = user?.user?.id === event.createdBy?._id;
+
+  const eventDate = formatLocalDateTime(singleEvent.date);
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -112,7 +124,10 @@ const EventDetailPage = () => {
             </Link>
 
             {isOwner && (
-              <button onClick={handleDelete} className="btn btn-error btn-outline">
+              <button
+                onClick={() => setShowConfirm(true)}
+                className="btn btn-error btn-outline"
+              >
                 <Trash2Icon className="h-5 w-5" />
                 Delete Event
               </button>
@@ -130,11 +145,13 @@ const EventDetailPage = () => {
                   <input
                     type="text"
                     className="input input-bordered"
-                    value={event.title ?? ""}
-                    onChange={(e) => setEvent({ ...event, title: e.target.value })}
+                    value={form.title ?? ""}
+                    onChange={(e) =>
+                      setForm({ ...form, title: e.target.value })
+                    }
                   />
                 ) : (
-                  <p className="label-text">{event.title}</p>
+                  <p className="label-text">{form.title}</p>
                 )}
               </div>
 
@@ -146,11 +163,13 @@ const EventDetailPage = () => {
                 {isOwner ? (
                   <textarea
                     className="textarea textarea-bordered h-32"
-                    value={event.content ?? ""}
-                    onChange={(e) => setEvent({ ...event, content: e.target.value })}
+                    value={form.content ?? ""}
+                    onChange={(e) =>
+                      setForm({ ...form, content: e.target.value })
+                    }
                   />
                 ) : (
-                  <p className="label-text">{event.content}</p>
+                  <p className="label-text">{form.content}</p>
                 )}
               </div>
 
@@ -163,11 +182,13 @@ const EventDetailPage = () => {
                   <input
                     type="text"
                     className="input input-bordered"
-                    value={event.location ?? ""}
-                    onChange={(e) => setEvent({ ...event, location: e.target.value })}
+                    value={form.location ?? ""}
+                    onChange={(e) =>
+                      setForm({ ...form, location: e.target.value })
+                    }
                   />
                 ) : (
-                  <p className="label-text">{event.location}</p>
+                  <p className="label-text">{form.location}</p>
                 )}
               </div>
 
@@ -180,11 +201,13 @@ const EventDetailPage = () => {
                   <input
                     type="number"
                     className="input input-bordered"
-                    value={event.maxcapacity ?? ""}
-                    onChange={(e) => setEvent({ ...event, maxcapacity: e.target.value })}
+                    value={form.maxcapacity ?? ""}
+                    onChange={(e) =>
+                      setForm({ ...form, maxcapacity: e.target.value })
+                    }
                   />
                 ) : (
-                  <p className="label-text">{event.maxcapacity ?? "-"}</p>
+                  <p className="label-text">{form.maxcapacity ?? "-"}</p>
                 )}
               </div>
 
@@ -197,16 +220,13 @@ const EventDetailPage = () => {
                   <input
                     type="text"
                     className="input input-bordered"
-                    value={event.categories?.join(", ") ?? ""}
+                    value={form.categories ?? ""}
                     onChange={(e) =>
-                      setEvent({
-                        ...event,
-                        categories: e.target.value.split(",").map((c) => c.trim())
-                      })
+                      setForm({ ...form, categories: e.target.value })
                     }
                   />
                 ) : (
-                  <p className="label-text">{event.categories?.join(", ") || "-"}</p>
+                  <p className="label-text">{form.categories || "-"}</p>
                 )}
               </div>
 
@@ -219,16 +239,13 @@ const EventDetailPage = () => {
                   <input
                     type="text"
                     className="input input-bordered"
-                    value={event.tags?.join(", ") ?? ""}
+                    value={form.tags ?? ""}
                     onChange={(e) =>
-                      setEvent({
-                        ...event,
-                        tags: e.target.value.split(",").map((t) => t.trim())
-                      })
+                      setForm({ ...form, tags: e.target.value })
                     }
                   />
                 ) : (
-                  <p className="label-text">{event.tags?.join(", ") || "-"}</p>
+                  <p className="label-text">{form.tags || "-"}</p>
                 )}
               </div>
 
@@ -241,8 +258,10 @@ const EventDetailPage = () => {
                   <input
                     type="datetime-local"
                     className="input input-bordered"
-                    value={event.date ? event.date.slice(0, 16) : ""}
-                    onChange={(e) => setEvent({ ...event, date: e.target.value })}
+                    value={form.date ?? ""}
+                    onChange={(e) =>
+                      setForm({ ...form, date: e.target.value })
+                    }
                   />
                 )}
               </div>
@@ -250,14 +269,18 @@ const EventDetailPage = () => {
               <div className="form-control mb-4">
                 <label className="label">
                   <span className="label-text">
-                    Created By: {isOwner ? "You" : event.createdBy?.name ?? "-"}
+                    Created By: {isOwner ? "You" : singleEvent.createdBy?.name}
                   </span>
                 </label>
               </div>
 
               {isOwner && (
                 <div className="card-actions justify-end">
-                  <button className="btn btn-primary" disabled={saving} onClick={handleSave}>
+                  <button
+                    className="btn btn-primary"
+                    disabled={saving}
+                    onClick={handleSave}
+                  >
                     {saving ? "Saving..." : "Save Changes"}
                   </button>
                 </div>
@@ -266,6 +289,40 @@ const EventDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {showConfirm && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setShowConfirm(false)}
+        >
+          <div
+            className="bg-base-100 p-6 rounded-lg shadow-xl w-80 animate-fadeIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold mb-2">Delete Event?</h3>
+            <p className="text-base-content/70 mb-4">
+              Are you sure you want to delete{" "}
+              <strong>{singleEvent.title}</strong>?
+            </p>
+
+            <div className="flex justify-end gap-2">
+              <button
+                className="btn btn-sm"
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="btn btn-sm btn-error"
+                onClick={handleDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -2,9 +2,14 @@ import { ArrowLeftIcon } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router";
-import api from "../lib/axios";
+
+import { useDispatch } from "react-redux";
+import { createEvent } from "../store/slices/eventsSlice";
 
 const CreatePage = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [location, setLocation] = useState("");
@@ -13,8 +18,6 @@ const CreatePage = () => {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const navigate = useNavigate();
 
   const handleDateChange = (e) => {
     const raw = e.target.value;
@@ -27,7 +30,7 @@ const CreatePage = () => {
     setDate(formatted);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!title.trim() || !content.trim() || !location.trim() || !date.trim()) {
@@ -35,48 +38,42 @@ const CreatePage = () => {
       return;
     }
 
-    const user = JSON.parse(localStorage.getItem("user"));
-
     setLoading(true);
-    try {
-      await api.post(
-        "/events",
-        {
-          title,
-          content,
-          location,
-          maxcapacity,
-          date,
-          categories,
-          tags,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
 
-      toast.success("Event created successfully!");
-      navigate("/");
-    } catch (error) {
-      console.log("Error creating event", error);
-      if (error.response?.status === 401) {
-        toast.error("Session expired. Please login again.", {
-          duration: 4000,
-          icon: "💀",
-        });
-      } else if (error.response?.status === 429) {
-        toast.error("Slow down! You're creating events too fast", {
-          duration: 4000,
-          icon: "💀",
-        });
-      } else {
-        toast.error("Failed to create event");
-      }
-    } finally {
-      setLoading(false);
-    }
+    dispatch(
+      createEvent({
+        title,
+        content,
+        location,
+        maxcapacity,
+        date,
+        categories,
+        tags,
+      })
+    )
+      .unwrap()
+      .then(() => {
+        toast.success("Event created successfully!");
+        navigate("/");
+      })
+      .catch((error) => {
+        console.log("Error creating event", error);
+
+        if (error?.status === 401) {
+          toast.error("Session expired. Please login again.", {
+            duration: 4000,
+            icon: "💀",
+          });
+        } else if (error?.status === 429) {
+          toast.error("Slow down! You're creating events too fast", {
+            duration: 4000,
+            icon: "💀",
+          });
+        } else {
+          toast.error("Failed to create event");
+        }
+      })
+      .finally(() => setLoading(false));
   };
 
   return (
@@ -123,7 +120,7 @@ const CreatePage = () => {
                   </label>
                   <input
                     type="text"
-                    placeholder="Write your event here..."
+                    placeholder="Location"
                     className="input input-bordered"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
@@ -136,7 +133,7 @@ const CreatePage = () => {
                   </label>
                   <input
                     type="number"
-                    placeholder="Write your max capacity here..."
+                    placeholder="Max capacity"
                     className="input input-bordered"
                     value={maxcapacity}
                     onChange={(e) => setMaxcapacity(e.target.value)}
@@ -151,7 +148,11 @@ const CreatePage = () => {
                     type="text"
                     className="input input-bordered"
                     placeholder="Music, Sports, Tech"
-                    onChange={(e) => setCategories(e.target.value.split(",").map(c => c.trim()))}
+                    onChange={(e) =>
+                      setCategories(
+                        e.target.value.split(",").map((c) => c.trim())
+                      )
+                    }
                   />
                 </div>
 
@@ -163,7 +164,9 @@ const CreatePage = () => {
                     type="text"
                     className="input input-bordered"
                     placeholder="Free, Outdoor, Family"
-                    onChange={(e) => setTags(e.target.value.split(",").map(t => t.trim()))}
+                    onChange={(e) =>
+                      setTags(e.target.value.split(",").map((t) => t.trim()))
+                    }
                   />
                 </div>
 

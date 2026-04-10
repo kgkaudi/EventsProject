@@ -2,54 +2,38 @@ import { ArrowLeftIcon } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router";
-import { BASE_URL } from "../lib/axios";
-import { useAuthContext } from "../hooks/useAuthContext";
 import PasswordInput from "../components/PasswordInput";
 
+import { useDispatch, useSelector } from "react-redux";
+import { signupUser } from "../store/slices/authSlice";
+
 const SignupPage = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const { loading, error } = useSelector((state) => state.auth);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  const { login } = useAuthContext();
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!name.trim() || !email.trim() || !password.trim() || !role.trim()) {
+    if (!name.trim() || !email.trim() || !password.trim()) {
       toast.error("All fields are required");
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
-    const response = await fetch(`${BASE_URL}/users/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, role }),
-    });
-
-    const json = await response.json();
-
-    if (!response.ok) {
-      setLoading(false);
-      setError(json.error);
-      toast.error(json.error);
-      return;
-    }
-
-    // Save user and login
-    localStorage.setItem("user", JSON.stringify(json));
-    login(json);
-
-    setLoading(false);
-    toast.success("User created successfully!");
-    navigate("/");
+    dispatch(signupUser({ name, email, password }))
+      .unwrap()
+      .then(() => {
+        toast.success("User created successfully!");
+        navigate("/");
+      })
+      .catch((err) => {
+        toast.error(err);
+      });
   };
 
   return (
@@ -97,19 +81,6 @@ const SignupPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
-
-                <div className="form-control mb-4">
-                  <label className="label">
-                    <span className="label-text">Role</span>
-                  </label>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="input input-bordered"
-                  >
-                    <option value="user">User</option>
-                  </select>
-                </div>
 
                 <div className="card-actions justify-end">
                   <button

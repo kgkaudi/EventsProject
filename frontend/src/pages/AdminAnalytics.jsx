@@ -1,29 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Navigate } from "react-router";
-import api from "../lib/axios";
+import { useDispatch, useSelector } from "react-redux";
+
 import Navbar from "../components/Navbar";
+import { fetchAnalytics } from "../store/slices/eventsSlice";
 
 export default function AdminAnalytics() {
-  const [stats, setStats] = useState(null);
+  const dispatch = useDispatch();
 
-  const loggedIn = JSON.parse(localStorage.getItem("user"));
+  const loggedIn = useSelector((s) => s.auth.user);
+  const { analytics, analyticsLoading } = useSelector((s) => s.events);
 
   if (!loggedIn || loggedIn.user.role !== "admin") {
     return <Navigate to="/" />;
   }
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await api.get("/events/stats");
-        setStats(res.data);
-      } catch (error) {
-        console.log("Error loading stats", error);
-      }
-    };
-
-    fetchStats();
-  }, []);
+    dispatch(fetchAnalytics());
+  }, [dispatch]);
 
   return (
     <div className="min-h-screen">
@@ -32,18 +26,22 @@ export default function AdminAnalytics() {
       <div className="max-w-5xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6">Admin Analytics</h1>
 
-        {!stats && <p>Loading analytics...</p>}
+        {analyticsLoading && <p>Loading analytics...</p>}
 
-        {stats && (
+        {!analyticsLoading && !analytics && (
+          <p className="text-error">Failed to load analytics</p>
+        )}
+
+        {analytics && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="stat shadow">
               <div className="stat-title">Total Events</div>
-              <div className="stat-value">{stats.totalEvents}</div>
+              <div className="stat-value">{analytics.totalEvents}</div>
             </div>
 
             <div className="stat shadow">
               <div className="stat-title">Events Per User</div>
-              <div className="stat-value">{stats.eventsPerUser.length}</div>
+              <div className="stat-value">{analytics.eventsPerUser.length}</div>
             </div>
           </div>
         )}

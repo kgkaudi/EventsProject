@@ -13,51 +13,20 @@ export async function getAllEvents(req, res) {
     if (q) {
       const words = q.trim().split(/\s+/);
 
-      // 1. Detect date
-      const dateWord = words.find((w) => !isNaN(Date.parse(w)));
-      if (dateWord) {
-        const date = new Date(dateWord);
-        const start = new Date(date);
-        const end = new Date(date);
-        end.setHours(23, 59, 59, 999);
-
-        query.date = { $gte: start, $lte: end };
-      }
-
-      // 2. Detect location (simple heuristic)
-      const locationCandidates = [
-        "gothenburg",
-        "stockholm",
-        "berlin",
-        "athens",
-      ];
-      const locationWord = words.find((w) =>
-        locationCandidates.includes(w.toLowerCase()),
-      );
-
-      if (locationWord) {
-        query.location = { $regex: locationWord, $options: "i" };
-      }
-
-      // 3. Remaining words → keyword search
-      const keywordWords = words.filter(
-        (w) => w !== dateWord && w !== locationWord,
-      );
-      if (keywordWords.length > 0) {
-        const keyword = keywordWords.join(" ");
-
-        query.$or = [
-          { title: { $regex: keyword, $options: "i" } },
-          { content: { $regex: keyword, $options: "i" } },
-          { categories: { $regex: keyword, $options: "i" } },
-          { tags: { $regex: keyword, $options: "i" } },
-        ];
-      }
+      query.$and = words.map((word) => ({
+        $or: [
+          { title: { $regex: word, $options: "i" } },
+          { content: { $regex: word, $options: "i" } },
+          { categories: { $regex: word, $options: "i" } },
+          { tags: { $regex: word, $options: "i" } },
+          { location: { $regex: word, $options: "i" } },
+        ],
+      }));
     }
 
     const events = await Event.find(query)
       .populate("createdBy", "name email")
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit);
 

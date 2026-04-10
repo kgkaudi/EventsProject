@@ -1,105 +1,95 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import api from "../lib/axios";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon, LoaderIcon, Trash2Icon, Eye, EyeOff } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  LoaderIcon,
+  Trash2Icon,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchUserById,
+  updateUser,
+  deleteUser,
+} from "../store/slices/usersSlice";
 
 const UserDetailPage = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { singleUser, singleLoading } = useSelector((s) => s.users);
+  const loggedIn = useSelector((s) => s.auth.user);
+
+  const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const navigate = useNavigate();
-  const { id } = useParams();
+  const isAdmin = loggedIn?.user?.role === "admin";
 
+  // Fetch user on mount
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get(`/users/${id}`);
-        setUser(res.data);
-      } catch (error) {
-        console.log("Error in fetching user", error);
-        toast.error("Failed to fetch the user");
-      } finally {
-        setLoading(false);
-      }
-    };
+    dispatch(fetchUserById(id));
+  }, [id, dispatch]);
 
-    fetchUser();
-  }, [id]);
+  // Sync form when user loads
+  useEffect(() => {
+    if (singleUser) {
+      setForm({
+        name: singleUser.name ?? "",
+        email: singleUser.email ?? "",
+        role: singleUser.role ?? "user",
+      });
+    }
+  }, [singleUser]);
 
-  const handleDelete = async () => {
+  const handleSave = () => {
+    if (!form.name.trim() || !form.email.trim() || !form.role.trim()) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    setSaving(true);
+
+    dispatch(updateUser({ id, data: form }))
+      .unwrap()
+      .then(() => {
+        toast.success("User updated successfully");
+        navigate("/users");
+      })
+      .catch((err) => {
+        console.log("Error updating user:", err);
+        toast.error(err?.message || "Failed to update user");
+      })
+      .finally(() => setSaving(false));
+  };
+
+  const handleDelete = () => {
     if (!deletePassword.trim()) {
       toast.error("Please enter your password to confirm deletion");
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem("user"));
-
-    try {
-      await api.delete(`/users/${id}`, {
-        headers: {
-          Authorization: `Bearer ${users?.token}`,
-        },
-        data: {
-          password: deletePassword,
-        },
+    dispatch(deleteUser({ id, password: deletePassword }))
+      .unwrap()
+      .then(() => {
+        toast.success("User deleted");
+        navigate("/users");
+      })
+      .catch((err) => {
+        if (err?.status === 400) toast.error("Incorrect password");
+        else if (err?.status === 403)
+          toast.error("You do not have permission to delete this user");
+        else toast.error("Failed to delete user");
       });
-
-      toast.success("User deleted");
-      navigate("/");
-    } catch (error) {
-      console.log("Error deleting the user:", error);
-      if (error.response?.status === 401) {
-        toast.error("Unauthorized. Please login again.");
-      } else if (error.response?.status === 403) {
-        toast.error("You do not have permission to delete this user.");
-      } else if (error.response?.status === 400) {
-        toast.error("Incorrect password");
-      } else {
-        toast.error("Failed to delete user");
-      }
-    }
   };
 
-  const handleSave = async () => {
-    if (!user.name.trim() || !user.email.trim() || !user.role.trim()) {
-      toast.error("Please add a name, email or role");
-      return;
-    }
-
-    const users = JSON.parse(localStorage.getItem("user"));
-    setSaving(true);
-
-    try {
-      await api.put(
-        `/users/${id}`,
-        user,
-        {
-          headers: {
-            Authorization: `Bearer ${users?.token}`,
-          },
-        }
-      );
-
-      toast.success("User updated successfully");
-      navigate("/users");
-    } catch (error) {
-      console.log("Error saving the user:", error);
-      if (error.response?.status === 401) {
-        toast.error("Unauthorized. Please login again.");
-      } else {
-        toast.error("Failed to update user");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
+  if (singleLoading || !form) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <LoaderIcon className="animate-spin size-10" />
@@ -133,10 +123,11 @@ const UserDetailPage = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="Write your user name here..."
                   className="input input-bordered"
-                  value={user.name}
-                  onChange={(e) => setUser({ ...user, name: e.target.value })}
+                  value={form.name ?? ""}
+                  onChange={(e) =>
+                    setForm({ ...form, name: e.target.value })
+                  }
                 />
               </div>
 
@@ -146,10 +137,11 @@ const UserDetailPage = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="Write your email here..."
                   className="input input-bordered"
-                  value={user.email}
-                  onChange={(e) => setUser({ ...user, email: e.target.value })}
+                  value={form.email ?? ""}
+                  onChange={(e) =>
+                    setForm({ ...form, email: e.target.value })
+                  }
                 />
               </div>
 
@@ -160,8 +152,10 @@ const UserDetailPage = () => {
 
                 <select
                   className="select select-bordered"
-                  value={user.role}
-                  onChange={(e) => setUser({ ...user, role: e.target.value })}
+                  value={form.role}
+                  onChange={(e) =>
+                    setForm({ ...form, role: e.target.value })
+                  }
                 >
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
@@ -177,13 +171,11 @@ const UserDetailPage = () => {
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
-
             </div>
           </div>
         </div>
       </div>
 
-      {/* DELETE CONFIRMATION MODAL */}
       {showDeleteModal && (
         <div className="modal modal-open">
           <div className="modal-box">
@@ -193,7 +185,6 @@ const UserDetailPage = () => {
               This will permanently delete this user and all events created by them.
             </p>
 
-            {/* PASSWORD FIELD WITH TOGGLE */}
             <div className="relative mb-4">
               <input
                 type={showPassword ? "text" : "password"}
@@ -241,7 +232,6 @@ const UserDetailPage = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

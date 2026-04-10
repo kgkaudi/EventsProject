@@ -1,18 +1,28 @@
-import { PlusIcon, Pen, LogIn, LogOut, User, Menu, ChevronDown } from "lucide-react";
+import {
+  PlusIcon,
+  Pen,
+  LogIn,
+  LogOut,
+  User,
+  Menu,
+  ChevronDown,
+} from "lucide-react";
 import React, { useState } from "react";
 import { Link } from "react-router";
-import { useLogout } from "../hooks/useLogout";
-import { useAuthContext } from "../hooks/useAuthContext";
 import toast from "react-hot-toast";
 
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../store/slices/authSlice";
+
 const Navbar = () => {
-  const { logout } = useLogout();
-  const { user } = useAuthContext();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
+
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
   const handleLogout = () => {
-    logout();
+    dispatch(logout());
     toast.success("User logged out successfully!");
     setOpen(false);
     setProfileOpen(false);
@@ -22,17 +32,22 @@ const Navbar = () => {
     <header className="bg-base-300 border-b border-base-content/10 sticky top-0 z-50">
       <div className="mx-auto max-w-6xl p-4">
         <div className="flex items-center justify-between">
-
           {/* Logo */}
           <h1 className="text-3xl font-bold text-primary font-mono tracking-tighter">
-            <Link to="/" onClick={() => { setOpen(false); setProfileOpen(false); }}>
+            <Link
+              to="/"
+              className="text-3xl font-bold text-primary font-mono tracking-tighter block"
+              onClick={() => {
+                setOpen(false);
+                setProfileOpen(false);
+              }}
+            >
               Sweden Events
             </Link>
           </h1>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-4">
-
             {user && (
               <div className="relative">
                 <button
@@ -71,8 +86,12 @@ const Navbar = () => {
                       </Link>
                     )}
 
-                    {user && user.user.role === "admin" && (
-                      <Link to="/admin/analytics" className="btn btn-ghost w-full justify-start">
+                    {user.user.role === "admin" && (
+                      <Link
+                        to="/admin/analytics"
+                        className="btn btn-ghost w-full justify-start"
+                        onClick={() => setProfileOpen(false)}
+                      >
                         Analytics
                       </Link>
                     )}
@@ -125,7 +144,6 @@ const Navbar = () => {
         {/* Mobile Menu */}
         {open && (
           <div className="md:hidden mt-4 flex flex-col gap-3 animate-fadeIn">
-
             {user && (
               <span className="hello-navbar mb-2">
                 Hello, {user.user.name}!
@@ -143,7 +161,7 @@ const Navbar = () => {
               </Link>
             )}
 
-            {user && user.user.role === "admin" && (
+            {user?.user.role === "admin" && (
               <Link
                 to="/users"
                 className="btn btn-primary w-full"
@@ -154,8 +172,12 @@ const Navbar = () => {
               </Link>
             )}
 
-            {user && user.user.role === "admin" && (
-              <Link to="/admin/analytics" className="btn btn-primary w-full">
+            {user?.user.role === "admin" && (
+              <Link
+                to="/admin/analytics"
+                className="btn btn-primary w-full"
+                onClick={() => setOpen(false)}
+              >
                 Analytics
               </Link>
             )}
