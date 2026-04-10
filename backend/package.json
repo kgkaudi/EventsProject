@@ -8,10 +8,6 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand"
   },
   "type": "module",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.1",

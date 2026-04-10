@@ -82,7 +82,7 @@ export async function updateUser(req, res) {
     delete updates.password;
 
     const user = await User.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 
@@ -174,7 +174,7 @@ export async function updateUserRole(req, res) {
     const updated = await User.findByIdAndUpdate(
       req.params.id,
       { role },
-      { new: true },
+      { returnDocument: "after" }
     );
 
     if (!updated) return res.status(404).json({ message: "User not found" });
