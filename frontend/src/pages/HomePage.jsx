@@ -80,11 +80,11 @@ const HomePage = () => {
           />
 
           <button
-            className="btn btn-outline"
+            className={`btn btn-outline ${query.trim() === "" ? "btn-disabled" : ""}`}
+            disabled={query.trim() === ""}
             onClick={() => {
               dispatch(setQuery(""));
               dispatch(resetEvents());
-              dispatch(fetchEvents({ page: 1, query: "" }));
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
           >
