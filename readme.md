@@ -164,6 +164,43 @@ npm run test:watch
 
 ---
 
+# 🌱 Database Seeding (Admin User + Test Event)
+
+The backend includes a migration/seed script that creates:
+
+- A default **admin user**
+- A default **test event**
+
+### 📁 Location
+
+```
+backend/migrations/seed.js
+```
+
+### ▶️ Run the seed script
+
+```bash
+npm run seed
+```
+
+### 🧬 What gets created
+
+#### Admin User
+- email: `admin@test.com`  
+- password: `Admin123!`  
+- role: `admin`
+
+#### Test Event
+- title: `Test Event`  
+- location: `Gothenburg`  
+- date: `2026-01-01`  
+- categories/tags: `["tech"]`, `["seed", "test"]`  
+- createdBy: admin user  
+
+The script is **idempotent** — running it multiple times will not create duplicates.
+
+---
+
 ## 🏗️ Tech Stack
 
 ### Frontend
@@ -200,6 +237,9 @@ backend/
 │   ├── models/
 │   ├── routes/
 │   └── server.js
+│
+│── migrations/
+│   └── seed.js
 │
 │── tests/
 │   ├── integration/
