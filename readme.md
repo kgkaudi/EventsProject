@@ -2,7 +2,13 @@
 
 A full‑stack **Events Management Platform** built with the **MERN** stack.  
 Users can register, authenticate, create events, update them, delete them, and browse events created by others.  
-The backend includes **JWT authentication**, **role‑based access**, **owner‑only permissions**, rate‑limit handling, and a fully tested API using **Jest**, **Supertest**, and **MongoDB Memory Server**.
+The backend includes **JWT authentication**, **role‑based access**, **owner‑only permissions**, rate‑limit handling, and a fully tested API using:
+
+- **Jest (ESM‑compatible)**
+- **Supertest**
+- **MongoDB Memory Server**
+- **Mocked middleware (requireAuth, adminOnly)**
+- **Full unit + integration test coverage**
 
 The frontend is built with **React + TailwindCSS + DaisyUI**, offering a clean UI, modals, password toggles, smart search, pagination, and a smooth user experience.
 
@@ -115,25 +121,46 @@ The events page supports:
 
 ---
 
-## 🧪 Testing (Full Coverage)
+# 🧪 Testing (Full, Modern, ESM‑Compatible)
 
-### Integration Tests
-- Controllers tested with:
-  - Supertest
-  - MongoDB Memory Server
-  - Real DB logic (no mocks)
+The backend uses a **fully modern Jest setup** compatible with:
 
-### Unit Tests
-- Routes (mock controllers)
-- Middleware (mock JWT + DB)
+- `"type": "module"`
+- `NODE_OPTIONS=--experimental-vm-modules`
+- ESM imports
+- MongoMemoryServer
+- Supertest
 
-### Test Layers
+### ✔ Test Architecture
 
 | Layer | Tools | Description |
 |-------|--------|-------------|
-| **Routes** | Jest + Supertest | Ensures endpoints call correct controllers |
-| **Middleware** | Jest | Mocks JWT + DB calls |
-| **Controllers** | Jest + Supertest + Mongo Memory Server | Full integration tests with real DB logic |
+| **Unit Tests** | Jest | Controllers (mocked models), middleware, routes |
+| **Integration Tests** | Jest + Supertest + MongoMemoryServer | Real DB logic, real Express routes |
+| **Middleware Tests** | Jest | Mocked JWT + DB |
+| **Route Tests** | Jest + Supertest | Ensures correct controller wiring |
+
+### ✔ Key Testing Features Added
+- **setupDB.js** — spins up MongoMemoryServer, wipes DB after each test  
+- **setupTests.js** — ESM‑safe mocking using `import { jest } from "@jest/globals"`  
+- **Mocked requireAuth + adminOnly** using `jest.unstable_mockModule`  
+- **Correct import order** (mocks before routes)  
+- **Integration tests use real Mongoose models**  
+- **Unit tests mock Event + User models**  
+- **Full coverage of all controller branches**  
+- **Stable VM Modules execution**  
+
+### ✔ Run all tests
+
+```bash
+npm test
+```
+
+### ✔ Watch mode
+
+```bash
+npm run test:watch
+```
 
 ---
 
@@ -155,9 +182,10 @@ The events page supports:
 - validator
 
 ### Testing
-- Jest
+- Jest (ESM‑compatible)
 - Supertest
 - MongoDB Memory Server
+- jest.unstable_mockModule (for middleware mocking)
 
 ---
 
@@ -178,6 +206,8 @@ backend/
 │   ├── middleware/
 │   ├── routes/
 │   └── setup/
+│       ├── setupDB.js
+│       └── setupTests.js
 │
 │── package.json
 │── jest.config.js
@@ -217,22 +247,6 @@ SECRET=<your_jwt_secret>
 
 ```bash
 npm run dev
-```
-
----
-
-## 🧪 Running Tests
-
-### Run all tests
-
-```bash
-npm test
-```
-
-### Watch mode
-
-```bash
-npm run test:watch
 ```
 
 ---
