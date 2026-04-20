@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "seed": "node migrations/seed.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand"
   },
   "type": "module",
