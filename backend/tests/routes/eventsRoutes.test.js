@@ -96,14 +96,9 @@ describe("Events Routes (Success + Edge Cases)", () => {
     expect(eventsController.getEvent).toHaveBeenCalled();
   });
 
-  test("GET /events/:id → requires auth", async () => {
-    eventsController.getEvent.mockImplementation((req, res) =>
-      res.status(200).json({ ok: true }),
-    );
-
+  test("GET /events/:id → does NOT require auth", async () => {
     await request(app).get("/events/123");
-
-    expect(requireAuth).toHaveBeenCalled();
+    expect(requireAuth).not.toHaveBeenCalled();
   });
 
   test("GET /events/:id → 404 when not found", async () => {
@@ -127,15 +122,23 @@ describe("Events Routes (Success + Edge Cases)", () => {
   // ============================================================================
   // AUTH ROUTE: GET /events/mine
   // ============================================================================
-  test("GET /events/mine → calls getMyEvents (not getEvent)", async () => {
+  test("GET /events/mine → requires auth and calls getMyEvents", async () => {
+    // Simulate authenticated user
+    requireAuth.mockImplementationOnce((req, res, next) => {
+      req.user = { _id: "mockUser123", role: "user" };
+      next();
+    });
+
     eventsController.getMyEvents.mockImplementation((req, res) =>
       res.status(200).json({ ok: true }),
     );
 
-    await request(app).get("/events/mine");
+    const res = await request(app).get("/events/mine");
 
-    expect(eventsController.getEvent).not.toHaveBeenCalled();
+    expect(requireAuth).toHaveBeenCalled();
     expect(eventsController.getMyEvents).toHaveBeenCalled();
+    expect(eventsController.getEvent).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
   });
 
   // ============================================================================
