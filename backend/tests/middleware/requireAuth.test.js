@@ -12,8 +12,8 @@ if (mongoose.modelNames().includes("User")) {
 jest.unstable_mockModule("../../src/models/User.js", () => {
   return {
     default: {
-      findById: jest.fn()
-    }
+      findById: jest.fn(),
+    },
   };
 });
 
@@ -22,8 +22,8 @@ jest.unstable_mockModule("../../src/models/User.js", () => {
 // -------------------------------------------------------
 jest.unstable_mockModule("jsonwebtoken", () => ({
   default: {
-    verify: jest.fn()
-  }
+    verify: jest.fn(),
+  },
 }));
 
 // -------------------------------------------------------
@@ -35,7 +35,8 @@ const jwt = (await import("jsonwebtoken")).default;
 // -------------------------------------------------------
 // 4. Import middleware AFTER mocks
 // -------------------------------------------------------
-const requireAuth = (await import("../../src/middleware/requireAuth.js")).default;
+const requireAuth = (await import("../../src/middleware/requireAuth.js"))
+  .default;
 
 // Silence console.log
 jest.spyOn(console, "log").mockImplementation(() => {});
@@ -89,7 +90,7 @@ describe("requireAuth Middleware (Success + Edge Cases)", () => {
     jwt.verify.mockReturnValue({ _id: "123" });
 
     User.findById.mockReturnValue({
-      select: jest.fn().mockResolvedValue(null)
+      select: jest.fn().mockResolvedValue(null),
     });
 
     await requireAuth(req, res, next);
@@ -106,7 +107,7 @@ describe("requireAuth Middleware (Success + Edge Cases)", () => {
     jwt.verify.mockReturnValue({ _id: "123" });
 
     User.findById.mockReturnValue({
-      select: jest.fn().mockResolvedValue({ _id: "123", role: "admin" })
+      select: jest.fn().mockResolvedValue({ _id: "123", role: "admin" }),
     });
 
     await requireAuth(req, res, next);
@@ -128,7 +129,7 @@ describe("requireAuth Middleware (Success + Edge Cases)", () => {
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ error: expect.any(String) })
+      expect.objectContaining({ error: expect.any(String) }),
     );
     expect(next).not.toHaveBeenCalled();
   });
@@ -141,7 +142,7 @@ describe("requireAuth Middleware (Success + Edge Cases)", () => {
     jwt.verify.mockReturnValue({}); // missing _id
 
     User.findById.mockReturnValue({
-      select: jest.fn().mockResolvedValue(null)
+      select: jest.fn().mockResolvedValue(null),
     });
 
     await requireAuth(req, res, next);
@@ -158,7 +159,7 @@ describe("requireAuth Middleware (Success + Edge Cases)", () => {
     jwt.verify.mockReturnValue({ _id: "123" });
 
     User.findById.mockReturnValue({
-      select: jest.fn().mockRejectedValue(new Error("DB error"))
+      select: jest.fn().mockRejectedValue(new Error("DB error")),
     });
 
     await requireAuth(req, res, next);
@@ -175,6 +176,47 @@ describe("requireAuth Middleware (Success + Edge Cases)", () => {
     jwt.verify.mockImplementation(() => {
       throw new Error("Unexpected failure");
     });
+
+    await requireAuth(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("returns 401 if Bearer header has no token after it", async () => {
+    const req = { headers: { authorization: "Bearer " } };
+    const res = mockResponse();
+    const next = jest.fn();
+
+    await requireAuth(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("calls next() even if role field is missing", async () => {
+    const req = { headers: { authorization: "Bearer token" } };
+    const res = mockResponse();
+    const next = jest.fn();
+
+    jwt.verify.mockReturnValue({ _id: "123" });
+
+    User.findById.mockReturnValue({
+      select: jest.fn().mockResolvedValue({ _id: "123" }), // missing role
+    });
+
+    await requireAuth(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+  });
+
+  test("returns 401 if jwt.verify returns a non-object payload", async () => {
+    const req = { headers: { authorization: "Bearer token" } };
+    const res = mockResponse();
+    const next = jest.fn();
+
+    // Returning null triggers destructuring error inside try block
+    jwt.verify.mockImplementation(() => null);
 
     await requireAuth(req, res, next);
 
