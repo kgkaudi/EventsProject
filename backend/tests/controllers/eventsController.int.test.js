@@ -5,32 +5,53 @@ import mongoose from "mongoose";
 
 process.env.SECRET = "testsecret";
 
-// Mock requireAuth BEFORE importing routes
+// -------------------------------------------------------------
+// 1. Mock modules BEFORE importing anything else
+// -------------------------------------------------------------
 jest.unstable_mockModule("../../src/middleware/requireAuth.js", () => ({
   default: jest.fn((req, res, next) => next())
 }));
 
-// Mock adminOnly BEFORE importing routes
 jest.unstable_mockModule("../../src/middleware/adminOnly.js", () => ({
   default: jest.fn((req, res, next) => next())
 }));
 
-// Import AFTER mocks
-const eventsRoutes = (await import("../../src/routes/eventsRoutes.js")).default;
-const User = (await import("../../src/models/User.js")).default;
-const Event = (await import("../../src/models/Event.js")).default;
-const requireAuth = (await import("../../src/middleware/requireAuth.js")).default;
+// -------------------------------------------------------------
+// 2. Declare variables to be filled in beforeAll
+// -------------------------------------------------------------
+let requireAuth;
+let eventsRoutes;
+let User;
+let Event;
+let app;
 
-const app = express();
-app.use(express.json());
-app.use("/events", eventsRoutes);
+// -------------------------------------------------------------
+// 3. Import everything AFTER mocks
+// -------------------------------------------------------------
+beforeAll(async () => {
+  requireAuth = (await import("../../src/middleware/requireAuth.js")).default;
+  eventsRoutes = (await import("../../src/routes/eventsRoutes.js")).default;
+  User = (await import("../../src/models/User.js")).default;
+  Event = (await import("../../src/models/Event.js")).default;
 
+  app = express();
+  app.use(express.json());
+  app.use("/events", eventsRoutes);
+});
+
+// -------------------------------------------------------------
+// 4. Clear DB before each test (ONLY ONE BLOCK)
+// -------------------------------------------------------------
+beforeEach(async () => {
+  await User.deleteMany();
+  await Event.deleteMany();
+  jest.clearAllMocks();
+});
+
+// -------------------------------------------------------------
+// 5. TESTS
+// -------------------------------------------------------------
 describe("Events Controller Integration", () => {
-  beforeEach(async () => {
-    await User.deleteMany();
-    await Event.deleteMany();
-    jest.clearAllMocks();
-  });
 
   // ============================================================================
   // CREATE EVENT
@@ -50,7 +71,6 @@ describe("Events Controller Integration", () => {
 
     const res = await request(app)
       .post("/events")
-      .set("Authorization", "Bearer faketoken")
       .send({
         title: "My Event",
         content: "Content",
@@ -75,13 +95,11 @@ describe("Events Controller Integration", () => {
     });
 
     const res = await request(app)
-      .post("/events/")
-      .set("Authorization", "Bearer faketoken")
+      .post("/events")
       .send({ title: "No User" });
 
     expect(res.status).toBe(400);
   });
-
 
   test("create event → user not found", async () => {
     requireAuth.mockImplementation((req, res, next) => {

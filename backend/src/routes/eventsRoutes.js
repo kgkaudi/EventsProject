@@ -8,7 +8,7 @@ import {
   getMyEvents,
   getEventStats
 } from "../controllers/eventsController.js";
-import requireAuth from "../middleware/requireAuth.js";
+import requireAuth from "../../src/middleware/requireAuth.js";
 import adminOnly from "../middleware/adminOnly.js";
 
 const router = express.Router();
