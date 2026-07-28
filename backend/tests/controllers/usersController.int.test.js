@@ -10,33 +10,33 @@ jest.unstable_mockModule("../../src/models/User.js", () => ({
     find: jest.fn(),
     findById: jest.fn(),
     findByIdAndUpdate: jest.fn(),
-    findByIdAndDelete: jest.fn()
-  }
+    findByIdAndDelete: jest.fn(),
+  },
 }));
 
 jest.unstable_mockModule("../../src/models/Event.js", () => ({
   default: {
-    deleteMany: jest.fn()
-  }
+    deleteMany: jest.fn(),
+  },
 }));
 
 jest.unstable_mockModule("bcryptjs", () => ({
   default: {
     compare: jest.fn(),
-    hash: jest.fn()
-  }
+    hash: jest.fn(),
+  },
 }));
 
 jest.unstable_mockModule("validator", () => ({
   default: {
-    isStrongPassword: jest.fn()
-  }
+    isStrongPassword: jest.fn(),
+  },
 }));
 
 jest.unstable_mockModule("jsonwebtoken", () => ({
   default: {
-    sign: jest.fn()
-  }
+    sign: jest.fn(),
+  },
 }));
 
 // -------------------------------------------------------
@@ -51,7 +51,8 @@ const jwt = (await import("jsonwebtoken")).default;
 // -------------------------------------------------------
 // 3. Import controller AFTER mocks
 // -------------------------------------------------------
-const usersController = await import("../../src/controllers/usersController.js");
+const usersController =
+  await import("../../src/controllers/usersController.js");
 
 // -------------------------------------------------------
 // 4. Helper for mock req/res
@@ -77,7 +78,7 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
       _id: "123",
       name: "Kostas",
       email: "a@a.com",
-      role: "user"
+      role: "user",
     });
 
     jwt.sign.mockReturnValue("token123");
@@ -88,8 +89,8 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         token: "token123",
-        user: expect.objectContaining({ id: "123" })
-      })
+        user: expect.objectContaining({ id: "123" }),
+      }),
     );
   });
 
@@ -114,8 +115,8 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
         name: "Kostas",
         email: "a@a.com",
         password: "StrongPass123!",
-        role: "user"
-      }
+        role: "user",
+      },
     };
     const res = mockResponse();
 
@@ -123,7 +124,7 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
       _id: "123",
       name: "Kostas",
       email: "a@a.com",
-      role: "user"
+      role: "user",
     });
 
     jwt.sign.mockReturnValue("token123");
@@ -134,8 +135,8 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         token: "token123",
-        user: expect.objectContaining({ id: "123" })
-      })
+        user: expect.objectContaining({ id: "123" }),
+      }),
     );
   });
 
@@ -159,7 +160,7 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
     const res = mockResponse();
 
     User.find.mockReturnValue({
-      sort: jest.fn().mockResolvedValue([{ name: "Kostas" }])
+      sort: jest.fn().mockResolvedValue([{ name: "Kostas" }]),
     });
 
     await usersController.getUsers(req, res);
@@ -172,16 +173,17 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
     const res = mockResponse();
 
     User.find.mockReturnValue({
-      sort: jest.fn().mockRejectedValue(new Error("DB error"))
+      sort: jest.fn().mockRejectedValue(new Error("DB error")),
     });
 
     await usersController.getUsers(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ message: "Internal server error" });
   });
 
   // ============================================================================
-  // GET USER
+  // GET USER BY ID
   // ============================================================================
   test("getUser → success", async () => {
     const req = { params: { id: "123" } };
@@ -216,7 +218,6 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
 
     await usersController.getUser(req, res);
 
-    // UPDATED EXPECTATION
     expect(res.status).toHaveBeenCalledWith(500);
   });
 
@@ -267,7 +268,6 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
 
     await usersController.updateUser(req, res);
 
-    // UPDATED EXPECTATION
     expect(res.status).toHaveBeenCalledWith(500);
   });
 
@@ -297,7 +297,7 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
   test("updateUserPassword → weak password", async () => {
     const req = {
       params: { id: "123" },
-      body: { password: "old", newPassword: "weak" }
+      body: { password: "old", newPassword: "weak" },
     };
     const res = mockResponse();
 
@@ -305,14 +305,13 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
 
     await usersController.updateUserPassword(req, res);
 
-    // UPDATED EXPECTATION
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
   test("updateUserPassword → user not found", async () => {
     const req = {
       params: { id: "123" },
-      body: { password: "old", newPassword: "StrongPass123!" }
+      body: { password: "old", newPassword: "StrongPass123!" },
     };
     const res = mockResponse();
 
@@ -327,7 +326,7 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
   test("updateUserPassword → wrong current password", async () => {
     const req = {
       params: { id: "123" },
-      body: { password: "wrong", newPassword: "StrongPass123!" }
+      body: { password: "wrong", newPassword: "StrongPass123!" },
     };
     const res = mockResponse();
 
@@ -343,14 +342,14 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
   test("updateUserPassword → success", async () => {
     const req = {
       params: { id: "123" },
-      body: { password: "old", newPassword: "StrongPass123!" }
+      body: { password: "old", newPassword: "StrongPass123!" },
     };
     const res = mockResponse();
 
     validator.isStrongPassword.mockReturnValue(true);
     User.findById.mockResolvedValue({
       password: "hashed",
-      save: jest.fn()
+      save: jest.fn(),
     });
     bcrypt.compare.mockResolvedValue(true);
     bcrypt.hash.mockResolvedValue("newhash");
@@ -369,7 +368,6 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
 
     await usersController.deleteUser(req, res);
 
-    // UPDATED EXPECTATION
     expect(res.status).toHaveBeenCalledWith(500);
   });
 
@@ -377,7 +375,7 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
     const req = {
       params: { id: "123" },
       body: { password: "pass" },
-      user: { _id: "admin" }
+      user: { _id: "admin" },
     };
     const res = mockResponse();
 
@@ -392,7 +390,7 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
     const req = {
       params: { id: "123" },
       body: { password: "wrong" },
-      user: { _id: "admin" }
+      user: { _id: "admin" },
     };
     const res = mockResponse();
 
@@ -408,7 +406,7 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
     const req = {
       params: { id: "123" },
       body: { password: "pass" },
-      user: { _id: "admin" }
+      user: { _id: "admin" },
     };
     const res = mockResponse();
 
@@ -425,7 +423,7 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
     const req = {
       params: { id: "123" },
       body: { password: "pass" },
-      user: { _id: "admin" }
+      user: { _id: "admin" },
     };
     const res = mockResponse();
 
@@ -471,7 +469,7 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
     await usersController.updateUserRole(req, res);
 
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ role: "admin" })
+      expect.objectContaining({ role: "admin" }),
     );
   });
 

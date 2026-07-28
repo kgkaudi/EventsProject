@@ -60,7 +60,7 @@ describe("Events Routes (Success + Edge Cases)", () => {
   beforeEach(() => jest.clearAllMocks());
 
   // ============================================================================
-  // SECTION A — PUBLIC ROUTES
+  // PUBLIC ROUTES
   // ============================================================================
 
   test("GET /events → calls getAllEvents", async () => {
@@ -82,7 +82,7 @@ describe("Events Routes (Success + Edge Cases)", () => {
   });
 
   // ============================================================================
-  // SECTION B — PUBLIC ROUTE: GET /events/:id
+  // PUBLIC ROUTE: GET /events/:id
   // ============================================================================
 
   test("GET /events/:id → calls getEvent", async () => {
@@ -125,7 +125,7 @@ describe("Events Routes (Success + Edge Cases)", () => {
   });
 
   // ============================================================================
-  // SECTION C — AUTH ROUTE: GET /events/mine
+  // AUTH ROUTE: GET /events/mine
   // ============================================================================
   test("GET /events/mine → calls getMyEvents (not getEvent)", async () => {
     eventsController.getMyEvents.mockImplementation((req, res) =>
@@ -139,7 +139,7 @@ describe("Events Routes (Success + Edge Cases)", () => {
   });
 
   // ============================================================================
-  // SECTION D — ADMIN ROUTE: GET /events/stats
+  // ADMIN ROUTE: GET /events/stats
   // ============================================================================
 
   test("GET /events/stats → requires both requireAuth and adminOnly", async () => {
@@ -186,7 +186,7 @@ describe("Events Routes (Success + Edge Cases)", () => {
   });
 
   // ============================================================================
-  // SECTION E — POST /events
+  // POST /events
   // ============================================================================
 
   test("POST /events → requires auth", async () => {
@@ -238,7 +238,7 @@ describe("Events Routes (Success + Edge Cases)", () => {
   });
 
   // ============================================================================
-  // SECTION F — PUT /events/:id
+  // PUT /events/:id
   // ============================================================================
 
   test("PUT /events/:id → requires auth", async () => {
@@ -290,7 +290,7 @@ describe("Events Routes (Success + Edge Cases)", () => {
   });
 
   // ============================================================================
-  // SECTION G — DELETE /events/:id
+  // DELETE /events/:id
   // ============================================================================
 
   test("DELETE /events/:id → requires auth", async () => {

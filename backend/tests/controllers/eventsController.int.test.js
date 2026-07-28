@@ -56,7 +56,7 @@ beforeEach(async () => {
 describe("Events Controller Integration", () => {
 
   // ============================================================================
-  // SECTION A — CREATE EVENT
+  // CREATE EVENT
   // ============================================================================
   test("create event → success", async () => {
     const user = await User.create({
@@ -120,7 +120,7 @@ describe("Events Controller Integration", () => {
   });
 
   // ============================================================================
-  // SECTION B — UPDATE EVENT
+  // UPDATE EVENT
   // ============================================================================
   test("update event → success", async () => {
     const user = await User.create({
@@ -240,7 +240,7 @@ describe("Events Controller Integration", () => {
   });
 
   // ============================================================================
-  // SECTION C — DELETE EVENT
+  // DELETE EVENT
   // ============================================================================
   test("delete event → success", async () => {
     const user = await User.create({
@@ -347,7 +347,7 @@ describe("Events Controller Integration", () => {
   });
 
   // ============================================================================
-  // SECTION D — GET ALL EVENTS
+  // GET ALL EVENTS
   // ============================================================================
   test("get events → invalid pagination", async () => {
     const res = await request(app).get("/events?page=0&limit=10");
@@ -363,7 +363,7 @@ describe("Events Controller Integration", () => {
   });
 
   // ============================================================================
-  // SECTION E — GET SINGLE EVENT
+  // GET SINGLE EVENT
   // ============================================================================
   test("get event → success", async () => {
     const user = await User.create({
@@ -399,7 +399,7 @@ describe("Events Controller Integration", () => {
   });
 
   // ============================================================================
-  // SECTION F — GET EVENT STATS
+  // GET EVENT STATS
   // ============================================================================
   test("get event stats → success", async () => {
     const user = await User.create({

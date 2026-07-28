@@ -8,11 +8,14 @@ describe("User Repository", () => {
     await Event.deleteMany();
   });
 
+  // ============================================================================
+  // FIND BY ID
+  // ============================================================================
   test("findById → success", async () => {
     const user = await User.create({
       name: "RepoUser",
       email: "repo@test.com",
-      password: "hashed"
+      password: "hashed",
     });
 
     const found = await userRepository.findById(user._id);
@@ -26,25 +29,44 @@ describe("User Repository", () => {
     expect(found).toBeNull();
   });
 
-  test("findAll → returns sorted list", async () => {
-    await User.create([
-      { name: "A", email: "a@test.com", password: "hashed" },
-      { name: "B", email: "b@test.com", password: "hashed" }
-    ]);
+  // ============================================================================
+  // FIND ALL
+  // ============================================================================
+  test("findAll → returns sorted by createdAt desc", async () => {
+    const u1 = await User.create({
+      name: "A",
+      email: "a@test.com",
+      password: "hashed",
+    });
+    const u2 = await User.create({
+      name: "B",
+      email: "b@test.com",
+      password: "hashed",
+    });
 
     const users = await userRepository.findAll();
-    expect(users.length).toBe(2);
+
+    expect(users[0]._id.toString()).toBe(u2._id.toString()); // newest first
+    expect(users[1]._id.toString()).toBe(u1._id.toString());
   });
 
+  test("findAll → empty list", async () => {
+    const users = await userRepository.findAll();
+    expect(users).toEqual([]);
+  });
+
+  // ============================================================================
+  // UPDATE USER
+  // ============================================================================
   test("findByIdAndUpdate → success", async () => {
     const user = await User.create({
       name: "Old",
       email: "old@test.com",
-      password: "hashed"
+      password: "hashed",
     });
 
     const updated = await userRepository.findByIdAndUpdate(user._id, {
-      name: "New"
+      name: "New",
     });
 
     expect(updated.name).toBe("New");
@@ -53,17 +75,26 @@ describe("User Repository", () => {
   test("findByIdAndUpdate → not found", async () => {
     const id = new User()._id;
     const updated = await userRepository.findByIdAndUpdate(id, {
-      name: "New"
+      name: "New",
     });
 
     expect(updated).toBeNull();
   });
 
+  test("findByIdAndUpdate → invalid ID format throws", async () => {
+    await expect(
+      userRepository.findByIdAndUpdate("bad-id", { name: "X" }),
+    ).rejects.toThrow();
+  });
+
+  // ============================================================================
+  // DELETE USER
+  // ============================================================================
   test("findByIdAndDelete → success", async () => {
     const user = await User.create({
       name: "DeleteMe",
       email: "del@test.com",
-      password: "hashed"
+      password: "hashed",
     });
 
     const deleted = await userRepository.findByIdAndDelete(user._id);
@@ -71,21 +102,44 @@ describe("User Repository", () => {
     expect(deleted.email).toBe("del@test.com");
   });
 
+  test("findByIdAndDelete → invalid ID format throws", async () => {
+    await expect(userRepository.findByIdAndDelete("bad-id")).rejects.toThrow();
+  });
+
+  // ============================================================================
+  // DELETE USER EVENTS
+  // ============================================================================
   test("deleteUserEvents → removes events", async () => {
     const user = await User.create({
       name: "EventUser",
       email: "ev@test.com",
-      password: "hashed"
+      password: "hashed",
     });
 
     await Event.create([
       { title: "A", createdBy: user._id },
-      { title: "B", createdBy: user._id }
+      { title: "B", createdBy: user._id },
     ]);
 
     await userRepository.deleteUserEvents(user._id);
 
     const remaining = await Event.find({ createdBy: user._id });
     expect(remaining.length).toBe(0);
+  });
+
+  test("deleteUserEvents → invalid ID format throws", async () => {
+    await expect(userRepository.deleteUserEvents("bad-id")).rejects.toThrow();
+  });
+
+  test("deleteUserEvents → no events does not throw", async () => {
+    const user = await User.create({
+      name: "NoEvents",
+      email: "no@test.com",
+      password: "hashed",
+    });
+
+    await expect(
+      userRepository.deleteUserEvents(user._id),
+    ).resolves.not.toThrow();
   });
 });
