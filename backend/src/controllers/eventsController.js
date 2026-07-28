@@ -1,12 +1,36 @@
 import { eventService } from "../services/eventService.js";
 
+function mapErrorToStatus(message) {
+  // Pagination & search validation
+  if (message === "Invalid pagination values") return 400;
+  if (message === "Search query must be a string") return 400;
+
+  // Create event validation
+  if (message === "Missing createdBy or user context") return 400;
+  if (message === "Invalid user ID") return 400;
+  if (message === "User not found") return 404;
+
+  // Update/delete validation
+  if (message === "Invalid event ID") return 404;
+  if (message === "Missing user role") return 400;
+
+  // Authorization
+  if (message === "Forbidden") return 403;
+
+  // Not found
+  if (message === "Event not found") return 404;
+
+  // Default
+  return 500;
+}
+
 export async function getAllEvents(req, res) {
   try {
     const result = await eventService.getAllEvents(req.query);
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error in getAllEvents", error);
-    res.status(500).json({ message: error.message });
+    const status = mapErrorToStatus(error.message);
+    res.status(status).json({ message: error.message });
   }
 }
 
@@ -16,8 +40,8 @@ export async function getMyEvents(req, res) {
     const events = await eventService.getMyEvents(userId);
     res.status(200).json(events);
   } catch (error) {
-    console.error("Error in getMyEvents", error);
-    res.status(500).json({ message: error.message });
+    const status = mapErrorToStatus(error.message);
+    res.status(status).json({ message: error.message });
   }
 }
 
@@ -25,21 +49,18 @@ export async function createEvent(req, res) {
   try {
     const userId = req.user?._id?.toString();
     const result = await eventService.createEvent(req.body, { _id: userId });
-    res.status(201).json({ message: "Your event was created successfully", result });
+    res.status(201).json({
+      message: "Your event was created successfully",
+      result
+    });
   } catch (error) {
-    console.error("Error in createEvent", error);
-    const status = error.message.includes("Missing")
-      ? 400
-      : error.message.includes("not found")
-      ? 404
-      : 500;
+    const status = mapErrorToStatus(error.message);
     res.status(status).json({ message: error.message });
   }
 }
 
 export async function updateEvent(req, res) {
   try {
-    const userId = req.user._id.toString();
     const updated = await eventService.updateEvent(
       req.params.id,
       req.user._id.toString(),
@@ -48,42 +69,21 @@ export async function updateEvent(req, res) {
     );
     res.status(200).json(updated);
   } catch (error) {
-    console.error("Error in updateEvent", error);
-
-    if (error.name === "CastError") {
-      return res.status(404).json({ message: "Event not found" });
-    }
-
-    const status =
-      error.message === "Forbidden"
-        ? 403
-        : error.message === "Event not found"
-        ? 404
-        : 500;
-
+    const status = mapErrorToStatus(error.message);
     res.status(status).json({ message: error.message });
   }
 }
 
 export async function deleteEvent(req, res) {
   try {
-    const userId = req.user._id.toString();   // ← FIX
-    await eventService.deleteEvent(req.params.id, userId, req.user.role);
+    await eventService.deleteEvent(
+      req.params.id,
+      req.user._id.toString(),
+      req.user.role
+    );
     res.status(200).json({ message: "Your event was deleted successfully" });
   } catch (error) {
-    console.error("Error in deleteEvent", error);
-
-    if (error.name === "CastError") {
-      return res.status(404).json({ message: "Event not found" });
-    }
-
-    const status =
-      error.message === "Forbidden"
-        ? 403
-        : error.message === "Event not found"
-        ? 404
-        : 500;
-
+    const status = mapErrorToStatus(error.message);
     res.status(status).json({ message: error.message });
   }
 }
@@ -93,13 +93,7 @@ export async function getEvent(req, res) {
     const event = await eventService.getEvent(req.params.id);
     res.status(200).json(event);
   } catch (error) {
-    console.error("Error in getEvent", error);
-
-    if (error.name === "CastError") {
-      return res.status(404).json({ message: "Event not found" });
-    }
-
-    const status = error.message === "Event not found" ? 404 : 500;
+    const status = mapErrorToStatus(error.message);
     res.status(status).json({ message: error.message });
   }
 }
@@ -109,7 +103,7 @@ export async function getEventStats(req, res) {
     const stats = await eventService.getEventStats();
     res.status(200).json(stats);
   } catch (error) {
-    console.error("Error in getEventStats", error);
-    res.status(500).json({ message: error.message });
+    const status = mapErrorToStatus(error.message);
+    res.status(status).json({ message: error.message });
   }
 }

@@ -1,16 +1,31 @@
+import mongoose from "mongoose";
 import { eventRepository } from "../repositories/eventRepository.js";
 import { userRepository } from "../repositories/userRepository.js";
 
 export const eventService = {
   async getAllEvents(queryParams) {
-    const page = Number(queryParams.page) || 1;
-    const limit = Number(queryParams.limit) || 9;
+    // Validate pagination
+    const rawPage = Number(queryParams.page);
+    const rawLimit = Number(queryParams.limit);
+
+    const page = isNaN(rawPage) ? 1 : rawPage;
+    const limit = isNaN(rawLimit) ? 9 : rawLimit;
+
+    if (page < 1 || limit < 1) {
+      throw new Error("Invalid pagination values");
+    }
+
     const skip = (page - 1) * limit;
 
+    // Validate search query
     const { q } = queryParams;
     const query = {};
 
     if (q) {
+      if (typeof q !== "string") {
+        throw new Error("Search query must be a string");
+      }
+
       const words = q.trim().split(/\s+/);
       query.$and = words.map((word) => ({
         $or: [
@@ -34,12 +49,20 @@ export const eventService = {
   },
 
   async getMyEvents(userId) {
+    if (!mongoose.isValidObjectId(userId)) {
+      throw new Error("Invalid user ID");
+    }
+
     return eventRepository.findByUser(userId);
   },
 
   async createEvent(data, userContext) {
     const userId = userContext?._id || data.createdBy;
     if (!userId) throw new Error("Missing createdBy or user context");
+
+    if (!mongoose.isValidObjectId(userId)) {
+      throw new Error("Invalid user ID");
+    }
 
     const user = await userRepository.findById(userId);
     if (!user) throw new Error("User not found");
@@ -48,6 +71,16 @@ export const eventService = {
   },
 
   async updateEvent(eventId, userId, data, userRole) {
+    if (!mongoose.isValidObjectId(eventId)) {
+      throw new Error("Invalid event ID");
+    }
+    if (!mongoose.isValidObjectId(userId)) {
+      throw new Error("Invalid user ID");
+    }
+    if (!userRole) {
+      throw new Error("Missing user role");
+    }
+
     const event = await eventRepository.findById(eventId);
     if (!event) throw new Error("Event not found");
 
@@ -62,6 +95,16 @@ export const eventService = {
   },
 
   async deleteEvent(eventId, userId, userRole) {
+    if (!mongoose.isValidObjectId(eventId)) {
+      throw new Error("Invalid event ID");
+    }
+    if (!mongoose.isValidObjectId(userId)) {
+      throw new Error("Invalid user ID");
+    }
+    if (!userRole) {
+      throw new Error("Missing user role");
+    }
+
     const event = await eventRepository.findById(eventId);
     if (!event) throw new Error("Event not found");
 
@@ -76,8 +119,13 @@ export const eventService = {
   },
 
   async getEvent(eventId) {
+    if (!mongoose.isValidObjectId(eventId)) {
+      throw new Error("Invalid event ID");
+    }
+
     const event = await eventRepository.findById(eventId);
     if (!event) throw new Error("Event not found");
+
     return event;
   },
 
