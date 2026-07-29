@@ -4,7 +4,6 @@ import { userRepository } from "../repositories/userRepository.js";
 
 export const eventService = {
   async getAllEvents(queryParams) {
-    // Validate pagination
     const rawPage = Number(queryParams.page);
     const rawLimit = Number(queryParams.limit);
 
@@ -17,7 +16,6 @@ export const eventService = {
 
     const skip = (page - 1) * limit;
 
-    // Validate search query
     const { q } = queryParams;
     const query = {};
 

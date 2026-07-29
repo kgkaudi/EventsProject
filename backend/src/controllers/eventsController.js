@@ -1,26 +1,15 @@
 import { eventService } from "../services/eventService.js";
 
 function mapErrorToStatus(message) {
-  // Pagination & search validation
   if (message === "Invalid pagination values") return 400;
   if (message === "Search query must be a string") return 400;
-
-  // Create event validation
   if (message === "Missing createdBy or user context") return 400;
   if (message === "Invalid user ID") return 400;
   if (message === "User not found") return 404;
-
-  // Update/delete validation
   if (message === "Invalid event ID") return 404;
   if (message === "Missing user role") return 400;
-
-  // Authorization
   if (message === "Forbidden") return 403;
-
-  // Not found
   if (message === "Event not found") return 404;
-
-  // Default
   return 500;
 }
 
@@ -51,7 +40,7 @@ export async function createEvent(req, res) {
     const result = await eventService.createEvent(req.body, { _id: userId });
     res.status(201).json({
       message: "Your event was created successfully",
-      result
+      result,
     });
   } catch (error) {
     const status = mapErrorToStatus(error.message);
@@ -65,7 +54,7 @@ export async function updateEvent(req, res) {
       req.params.id,
       req.user._id.toString(),
       req.body,
-      req.user.role
+      req.user.role,
     );
     res.status(200).json(updated);
   } catch (error) {
@@ -79,7 +68,7 @@ export async function deleteEvent(req, res) {
     await eventService.deleteEvent(
       req.params.id,
       req.user._id.toString(),
-      req.user.role
+      req.user.role,
     );
     res.status(200).json({ message: "Your event was deleted successfully" });
   } catch (error) {

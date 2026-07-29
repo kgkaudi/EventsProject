@@ -1,4 +1,3 @@
-// backend/src/services/userService.js
 import bcrypt from "bcryptjs";
 import validator from "validator";
 import jwt from "jsonwebtoken";
@@ -93,7 +92,9 @@ export const userService = {
 
     await userRepository.deleteUserEvents(userId);
 
-    return { message: "User and all associated events were deleted successfully" };
+    return {
+      message: "User and all associated events were deleted successfully",
+    };
   },
 
   async updateRole(id, role) {
