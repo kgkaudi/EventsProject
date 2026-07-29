@@ -10,20 +10,22 @@ import {
   updateUserRole,
 } from "../controllers/usersController.js";
 
-import requireAuth from "../../src/middleware/requireAuth.js";
+import requireAuth from "../middleware/requireAuth.js";
 import adminOnly from "../middleware/adminOnly.js";
+import { validateDTO } from "../middleware/validateDTO.js";
+import { validateUserDTO, validateLoginDTO, validatePasswordChangeDTO } from "../dto/UserDTO.js";
 
 const router = express.Router();
 
-// Public routes
-router.post("/login", loginUser);
-router.post("/signup", signupUser);
-
-// Admin / protected routes
+// PUBLIC ROUTES
+router.post("/login", validateDTO(validateLoginDTO), loginUser);
+router.post("/signup", validateDTO(validateUserDTO), signupUser);
 router.get("/", getUsers);
 router.get("/:id", getUser);
-router.put("/:id", updateUser);
-router.put("/change-password/:id", updateUserPassword);
+
+// PROTECTED
+router.put("/:id", requireAuth, validateDTO(validateUserDTO), updateUser);
+router.put("/change-password/:id",validateDTO(validatePasswordChangeDTO),updateUserPassword);
 router.delete("/:id", requireAuth, deleteUser);
 router.put("/:id/role", requireAuth, adminOnly, updateUserRole);
 

@@ -51,7 +51,7 @@ beforeEach(async () => {
 });
 
 // -------------------------------------------------------------
-// 5. TEST SUITE — SORTED BY FUNCTIONALITY
+// 5. TEST SUITES
 // -------------------------------------------------------------
 describe("Events Controller Integration", () => {
 
@@ -92,7 +92,18 @@ describe("Events Controller Integration", () => {
       next();
     });
 
-    const res = await request(app).post("/events").send({ title: "No User" });
+    const res = await request(app)
+      .post("/events")
+      .send({
+        title: "No User",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
+
     expect(res.status).toBe(400);
   });
 
@@ -105,7 +116,18 @@ describe("Events Controller Integration", () => {
       next();
     });
 
-    const res = await request(app).post("/events").send({ title: "Bad User" });
+    const res = await request(app)
+      .post("/events")
+      .send({
+        title: "Bad User",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
+
     expect(res.status).toBe(404);
   });
 
@@ -115,7 +137,18 @@ describe("Events Controller Integration", () => {
       next();
     });
 
-    const res = await request(app).post("/events").send({ title: "Bad" });
+    const res = await request(app)
+      .post("/events")
+      .send({
+        title: "Bad",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
+
     expect(res.status).toBe(400);
   });
 
@@ -148,7 +181,15 @@ describe("Events Controller Integration", () => {
 
     const res = await request(app)
       .put(`/events/${event._id}`)
-      .send({ title: "Updated" });
+      .send({
+        title: "Updated",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
 
     expect(res.status).toBe(200);
     expect(res.body.title).toBe("Updated");
@@ -187,7 +228,15 @@ describe("Events Controller Integration", () => {
 
     const res = await request(app)
       .put(`/events/${event._id}`)
-      .send({ title: "Hack" });
+      .send({
+        title: "Hack",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
 
     expect(res.status).toBe(403);
   });
@@ -203,7 +252,15 @@ describe("Events Controller Integration", () => {
 
     const res = await request(app)
       .put("/events/invalid-id")
-      .send({ title: "X" });
+      .send({
+        title: "X",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
 
     expect(res.status).toBe(404);
   });
@@ -234,7 +291,15 @@ describe("Events Controller Integration", () => {
 
     const res = await request(app)
       .put(`/events/${event._id}`)
-      .send({ title: "X" });
+      .send({
+        title: "X",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
 
     expect(res.status).toBe(400);
   });

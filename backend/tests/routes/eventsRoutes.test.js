@@ -54,7 +54,7 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================================================
-// TEST SUITE
+// TEST SUITES
 // ============================================================================
 describe("Events Routes (Success + Edge Cases)", () => {
   beforeEach(() => jest.clearAllMocks());
@@ -200,22 +200,23 @@ describe("Events Routes (Success + Edge Cases)", () => {
     const res = await request(app)
       .post("/events")
       .set("Authorization", "Bearer token")
-      .send({ title: "Test" });
+      .send({
+        title: "Test",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
 
     expect(requireAuth).toHaveBeenCalled();
     expect(eventsController.createEvent).toHaveBeenCalled();
     expect(res.status).toBe(201);
   });
 
-  test("POST /events → 400 for missing fields", async () => {
-    eventsController.createEvent.mockImplementation((req, res) =>
-      res.status(400).json({ error: "Missing required fields" }),
-    );
-
-    const res = await request(app)
-      .post("/events")
-      .set("Authorization", "Bearer token")
-      .send({ title: "" });
+  test("POST /events → 400 for invalid DTO", async () => {
+    const res = await request(app).post("/events").send({ title: "" });
 
     expect(res.status).toBe(400);
   });
@@ -227,14 +228,31 @@ describe("Events Routes (Success + Edge Cases)", () => {
 
     const res = await request(app)
       .post("/events")
-      .set("Authorization", "Bearer token")
-      .send({ title: "Test" });
+      .send({
+        title: "Test",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
 
     expect(res.status).toBe(500);
   });
 
   test("POST /events → does NOT call getEvent", async () => {
-    await request(app).post("/events").send({ title: "X" });
+    await request(app)
+      .post("/events")
+      .send({
+        title: "X",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
 
     expect(eventsController.getEvent).not.toHaveBeenCalled();
     expect(eventsController.createEvent).toHaveBeenCalled();
@@ -252,7 +270,15 @@ describe("Events Routes (Success + Edge Cases)", () => {
     const res = await request(app)
       .put("/events/123")
       .set("Authorization", "Bearer token")
-      .send({ title: "Updated" });
+      .send({
+        title: "Updated",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
 
     expect(requireAuth).toHaveBeenCalled();
     expect(eventsController.updateEvent).toHaveBeenCalled();
@@ -266,8 +292,15 @@ describe("Events Routes (Success + Edge Cases)", () => {
 
     const res = await request(app)
       .put("/events/123")
-      .set("Authorization", "Bearer token")
-      .send({ title: "Updated" });
+      .send({
+        title: "Updated",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
 
     expect(res.status).toBe(404);
   });
@@ -279,14 +312,31 @@ describe("Events Routes (Success + Edge Cases)", () => {
 
     const res = await request(app)
       .put("/events/123")
-      .set("Authorization", "Bearer token")
-      .send({ title: "Updated" });
+      .send({
+        title: "Updated",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
 
     expect(res.status).toBe(403);
   });
 
   test("PUT /events/:id → does NOT call getAllEvents", async () => {
-    await request(app).put("/events/123").send({ title: "X" });
+    await request(app)
+      .put("/events/123")
+      .send({
+        title: "X",
+        content: "C",
+        location: "Athens",
+        maxcapacity: 10,
+        date: "2025-01-01",
+        categories: ["tech"],
+        tags: ["react"],
+      });
 
     expect(eventsController.getAllEvents).not.toHaveBeenCalled();
     expect(eventsController.updateEvent).toHaveBeenCalled();

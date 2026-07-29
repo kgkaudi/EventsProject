@@ -65,7 +65,7 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================================================
-// TEST SUITE — SORTED BY FUNCTIONALITY
+// TEST SUITES
 // ============================================================================
 describe("Users Routes (Success + Edge Cases)", () => {
   beforeEach(() => jest.clearAllMocks());
@@ -86,11 +86,7 @@ describe("Users Routes (Success + Edge Cases)", () => {
     expect(usersController.loginUser).toHaveBeenCalled();
   });
 
-  test("POST /users/login → 400 missing fields", async () => {
-    usersController.loginUser.mockImplementation((req, res) =>
-      res.status(400).json({ error: "Missing fields" }),
-    );
-
+  test("POST /users/login → 400 invalid DTO", async () => {
     const res = await request(app).post("/users/login").send({});
     expect(res.status).toBe(400);
   });
@@ -124,11 +120,7 @@ describe("Users Routes (Success + Edge Cases)", () => {
     expect(usersController.signupUser).toHaveBeenCalled();
   });
 
-  test("POST /users/signup → 400 invalid data", async () => {
-    usersController.signupUser.mockImplementation((req, res) =>
-      res.status(400).json({ error: "Invalid data" }),
-    );
-
+  test("POST /users/signup → 400 invalid DTO", async () => {
     const res = await request(app).post("/users/signup").send({});
     expect(res.status).toBe(400);
   });
@@ -147,7 +139,7 @@ describe("Users Routes (Success + Edge Cases)", () => {
   });
 
   // ============================================================================
-  // GET USERS
+  // GET USERS (PUBLIC)
   // ============================================================================
   test("GET /users → calls getUsers", async () => {
     usersController.getUsers.mockImplementation((req, res) =>
@@ -170,7 +162,7 @@ describe("Users Routes (Success + Edge Cases)", () => {
   });
 
   // ============================================================================
-  // GET USER BY ID
+  // GET USER BY ID (PUBLIC)
   // ============================================================================
   test("GET /users/:id → calls getUser", async () => {
     usersController.getUser.mockImplementation((req, res) =>
@@ -211,23 +203,25 @@ describe("Users Routes (Success + Edge Cases)", () => {
   });
 
   // ============================================================================
-  // UPDATE USER
+  // UPDATE USER (PROTECTED)
   // ============================================================================
   test("PUT /users/:id → calls updateUser", async () => {
     usersController.updateUser.mockImplementation((req, res) =>
       res.status(200).json({ name: "Updated" }),
     );
 
-    const res = await request(app).put("/users/123").send({ name: "Updated" });
-    expect(res.status).toBe(200);
+    const res = await request(app).put("/users/123").send({
+      name: "Updated",
+      email: "test@test.com",
+      password: "123456",
+    });
+
+    expect(requireAuth).toHaveBeenCalled();
     expect(usersController.updateUser).toHaveBeenCalled();
+    expect(res.status).toBe(200);
   });
 
-  test("PUT /users/:id → 400 invalid data", async () => {
-    usersController.updateUser.mockImplementation((req, res) =>
-      res.status(400).json({ error: "Invalid data" }),
-    );
-
+  test("PUT /users/:id → 400 invalid DTO", async () => {
     const res = await request(app).put("/users/123").send({});
     expect(res.status).toBe(400);
   });
@@ -237,13 +231,16 @@ describe("Users Routes (Success + Edge Cases)", () => {
       throw new Error("Update error");
     });
 
-    const res = await request(app).put("/users/123").send({ name: "New" });
+    const res = await request(app)
+      .put("/users/123")
+      .send({ name: "New", email: "a@a.com", password: "123456" });
+
     expect(res.status).toBe(500);
     expect(res.body.error).toMatch(/update error/i);
   });
 
   // ============================================================================
-  // CHANGE PASSWORD
+  // CHANGE PASSWORD (PUBLIC)
   // ============================================================================
   test("PUT /users/change-password/:id → calls updateUserPassword", async () => {
     usersController.updateUserPassword.mockImplementation((req, res) =>
@@ -259,10 +256,6 @@ describe("Users Routes (Success + Edge Cases)", () => {
   });
 
   test("PUT /users/change-password/:id → 400 invalid data", async () => {
-    usersController.updateUserPassword.mockImplementation((req, res) =>
-      res.status(400).json({ error: "Invalid password" }),
-    );
-
     const res = await request(app)
       .put("/users/change-password/123")
       .send({});
@@ -284,7 +277,7 @@ describe("Users Routes (Success + Edge Cases)", () => {
   });
 
   // ============================================================================
-  // DELETE USER (AUTH REQUIRED)
+  // DELETE USER (PROTECTED)
   // ============================================================================
   test("DELETE /users/:id → calls deleteUser", async () => {
     usersController.deleteUser.mockImplementation((req, res) =>
@@ -328,7 +321,6 @@ describe("Users Routes (Success + Edge Cases)", () => {
   test("PUT /users/:id/role → 403 non-admin", async () => {
     const res = await request(app)
       .put("/users/123/role")
-      .set("Authorization", "Bearer token")
       .send({ role: "admin" });
 
     expect(adminOnly).toHaveBeenCalled();
@@ -347,7 +339,6 @@ describe("Users Routes (Success + Edge Cases)", () => {
 
     const res = await request(app)
       .put("/users/123/role")
-      .set("Authorization", "Bearer token")
       .send({ role: "admin" });
 
     expect(res.status).toBe(500);

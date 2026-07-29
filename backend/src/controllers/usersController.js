@@ -33,7 +33,6 @@ export async function getUser(req, res) {
     const user = await userService.getUser(req.params.id);
     res.status(200).json(user);
   } catch (error) {
-    // TEST EXPECTS 500 FOR INVALID ID
     if (error.name === "CastError") {
       return res.status(500).json({ message: error.message });
     }
@@ -47,7 +46,6 @@ export async function updateUser(req, res) {
     const updated = await userService.updateUser(req.params.id, req.body);
     res.status(200).json(updated);
   } catch (error) {
-    // TEST EXPECTS 500 FOR INVALID ID
     if (error.name === "CastError") {
       return res.status(500).json({ message: error.message });
     }
@@ -59,19 +57,29 @@ export async function updateUser(req, res) {
 export async function updateUserPassword(req, res) {
   try {
     const { password, newPassword } = req.body;
+
+    if (!password || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "Both password fields are required" });
+    }
+
     const result = await userService.updatePassword(
       req.params.id,
       password,
-      newPassword
+      newPassword,
     );
     res.status(200).json(result);
   } catch (error) {
-    const status =
-      error.message.includes("required") ? 400 :
-      error.message.includes("strong") ? 400 :
-      error.message.includes("Incorrect") ? 401 :
-      error.message === "User not found" ? 404 :
-      500;
+    const status = error.message.includes("required")
+      ? 400
+      : error.message.includes("strong")
+        ? 400
+        : error.message.includes("Incorrect")
+          ? 401
+          : error.message === "User not found"
+            ? 404
+            : 500;
 
     res.status(status).json({ message: error.message });
   }
@@ -82,7 +90,7 @@ export async function deleteUser(req, res) {
     const result = await userService.deleteUser(
       req.user._id,
       req.params.id,
-      req.body.password
+      req.body.password,
     );
     res.status(200).json(result);
   } catch (error) {
@@ -91,10 +99,13 @@ export async function deleteUser(req, res) {
     }
 
     const status =
-      error.message === "Unauthorized" ? 401 :
-      error.message === "Incorrect password" ? 400 :
-      error.message === "User not found" ? 404 :
-      500;
+      error.message === "Unauthorized"
+        ? 401
+        : error.message === "Incorrect password"
+          ? 400
+          : error.message === "User not found"
+            ? 404
+            : 500;
 
     res.status(status).json({ message: error.message });
   }
@@ -106,9 +117,11 @@ export async function updateUserRole(req, res) {
     res.status(200).json(updated);
   } catch (error) {
     const status =
-      error.message === "Invalid role" ? 400 :
-      error.message === "User not found" ? 404 :
-      500;
+      error.message === "Invalid role"
+        ? 400
+        : error.message === "User not found"
+          ? 404
+          : 500;
 
     res.status(status).json({ message: error.message });
   }
