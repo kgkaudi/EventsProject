@@ -145,6 +145,119 @@ describe("User Repository", () => {
   });
 
   // ============================================================================
+  // SIGNUP
+  // ============================================================================
+  test("signup → success", async () => {
+    const user = await userRepository.signup(
+      "NewUser",
+      "new@test.com",
+      "StrongPass123!",
+      "user",
+    );
+
+    expect(user.name).toBe("NewUser");
+    expect(user.email).toBe("new@test.com");
+    expect(user.password).not.toBe("StrongPass123!"); // hashed
+  });
+
+  test("signup → email is stored lowercase", async () => {
+    const user = await userRepository.signup(
+      "CaseUser",
+      "MixedCase@Test.com",
+      "StrongPass123!",
+      "user",
+    );
+
+    expect(user.email).toBe("mixedcase@test.com");
+  });
+
+  test("signup → duplicate email throws", async () => {
+    await User.create({
+      name: "Existing",
+      email: "dupe@test.com",
+      password: "hashed",
+    });
+
+    await expect(
+      userRepository.signup(
+        "AnotherName",
+        "dupe@test.com",
+        "StrongPass123!",
+        "user",
+      ),
+    ).rejects.toThrow("Email already in use");
+  });
+
+  test("signup → duplicate email is case-insensitive", async () => {
+    await User.create({
+      name: "Existing",
+      email: "dupe2@test.com",
+      password: "hashed",
+    });
+
+    await expect(
+      userRepository.signup(
+        "AnotherName",
+        "DUPE2@test.com",
+        "StrongPass123!",
+        "user",
+      ),
+    ).rejects.toThrow("Email already in use");
+  });
+
+  test("signup → duplicate name throws", async () => {
+    await User.create({
+      name: "TakenName",
+      email: "taken@test.com",
+      password: "hashed",
+    });
+
+    await expect(
+      userRepository.signup(
+        "TakenName",
+        "different@test.com",
+        "StrongPass123!",
+        "user",
+      ),
+    ).rejects.toThrow("Name already in use");
+  });
+
+  test("signup → duplicate name is case-insensitive", async () => {
+    await User.create({
+      name: "TakenName",
+      email: "taken2@test.com",
+      password: "hashed",
+    });
+
+    await expect(
+      userRepository.signup(
+        "takenname",
+        "different2@test.com",
+        "StrongPass123!",
+        "user",
+      ),
+    ).rejects.toThrow("Name already in use");
+  });
+
+  test("signup → invalid email throws", async () => {
+    await expect(
+      userRepository.signup("X", "not-an-email", "StrongPass123!", "user"),
+    ).rejects.toThrow("Email is not valid");
+  });
+
+  test("signup → weak password throws", async () => {
+    await expect(
+      userRepository.signup("X", "x@test.com", "weak", "user"),
+    ).rejects.toThrow("Password is not strong enough");
+  });
+
+  test("signup → missing fields throws", async () => {
+    await expect(
+      userRepository.signup(null, null, null, "user"),
+    ).rejects.toThrow("You must fill all the fields");
+  });
+
+  // ============================================================================
   // LOGIN (name OR email)
   // ============================================================================
   test("login → success using email", async () => {
@@ -173,6 +286,34 @@ describe("User Repository", () => {
     const user = await userRepository.login("LoginName", "123456");
 
     expect(user.name).toBe("LoginName");
+  });
+
+  test("login → success using email with different case", async () => {
+    const hashed = await bcrypt.hash("123456", 10);
+
+    await User.create({
+      name: "CaseLogin",
+      email: "caselogin@test.com",
+      password: hashed,
+    });
+
+    const user = await userRepository.login("CaseLogin@Test.com", "123456");
+
+    expect(user.email).toBe("caselogin@test.com");
+  });
+
+  test("login → success using name with different case", async () => {
+    const hashed = await bcrypt.hash("123456", 10);
+
+    await User.create({
+      name: "CaseName",
+      email: "casename@test.com",
+      password: hashed,
+    });
+
+    const user = await userRepository.login("casename", "123456");
+
+    expect(user.name).toBe("CaseName");
   });
 
   test("login → incorrect identifier throws", async () => {

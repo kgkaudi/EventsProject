@@ -159,6 +159,67 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: "Signup failed" });
     });
+
+    test("email already in use → 409", async () => {
+      const req = { body: { name: "Kostas", email: "a@a.com", password: "StrongPass123!" } };
+      const res = mockResponse();
+
+      userService.signup.mockRejectedValue(new Error("Email already in use"));
+
+      await usersController.signupUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json).toHaveBeenCalledWith({ error: "Email already in use" });
+    });
+
+    test("name already in use → 409", async () => {
+      const req = { body: { name: "Kostas", email: "a@a.com", password: "StrongPass123!" } };
+      const res = mockResponse();
+
+      userService.signup.mockRejectedValue(new Error("Name already in use"));
+
+      await usersController.signupUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json).toHaveBeenCalledWith({ error: "Name already in use" });
+    });
+
+    test("weak password → 400", async () => {
+      const req = { body: { name: "Kostas", email: "a@a.com", password: "weak" } };
+      const res = mockResponse();
+
+      userService.signup.mockRejectedValue(
+        new Error("Password is not strong enough"),
+      );
+
+      await usersController.signupUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    test("invalid email → 400", async () => {
+      const req = { body: { name: "Kostas", email: "not-an-email", password: "StrongPass123!" } };
+      const res = mockResponse();
+
+      userService.signup.mockRejectedValue(new Error("Email is not valid"));
+
+      await usersController.signupUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    test("missing fields → 400", async () => {
+      const req = { body: {} };
+      const res = mockResponse();
+
+      userService.signup.mockRejectedValue(
+        new Error("You must fill all the fields"),
+      );
+
+      await usersController.signupUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
   });
 
   // ============================================================================

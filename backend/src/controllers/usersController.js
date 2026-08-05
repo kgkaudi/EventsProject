@@ -44,7 +44,17 @@ export async function signupUser(req, res) {
     const result = await userService.signup(name, email, password, role);
     res.status(201).json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const status =
+      error.message === "Email already in use" ||
+      error.message === "Name already in use"
+        ? 409
+        : error.message === "You must fill all the fields" ||
+            error.message === "Email is not valid" ||
+            error.message === "Password is not strong enough"
+          ? 400
+          : 500;
+
+    res.status(status).json({ error: error.message });
   }
 }
 
@@ -116,7 +126,7 @@ export async function updateUserPassword(req, res) {
     const result = await userService.updatePassword(
       req.params.id,
       password,
-      newPassword,
+      newPassword
     );
 
     res.status(200).json(result);
@@ -145,7 +155,7 @@ export async function deleteUser(req, res) {
     const result = await userService.deleteUser(
       req.user._id,
       req.params.id,
-      req.body.password,
+      req.body.password
     );
     res.status(200).json(result);
   } catch (error) {
