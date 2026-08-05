@@ -11,7 +11,7 @@ export async function loginUser(req, res) {
 
     if (!identifier || !password) {
       return res.status(400).json({
-        message: "Validation faileds",
+        message: "Validation failed",
         errors: ["Name or email required", "Password required"],
       });
     }
