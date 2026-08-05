@@ -8,8 +8,12 @@ const createToken = (_id) => {
 };
 
 export const userService = {
-  async login(email, password) {
-    const user = await userRepository.login(email, password);
+  //
+  // LOGIN (name OR email)
+  //
+  async login(identifier, password) {
+    // identifier = name OR email
+    const user = await userRepository.login(identifier, password);
     const token = createToken(user._id);
 
     return {
@@ -23,6 +27,9 @@ export const userService = {
     };
   },
 
+  //
+  // SIGNUP
+  //
   async signup(name, email, password, role) {
     const user = await userRepository.signup(name, email, password, role);
     const token = createToken(user._id);
@@ -38,16 +45,25 @@ export const userService = {
     };
   },
 
+  //
+  // GET ALL USERS
+  //
   async getUsers() {
     return userRepository.findAll();
   },
 
+  //
+  // GET USER BY ID
+  //
   async getUser(id) {
     const user = await userRepository.findById(id);
     if (!user) throw new Error("User not found");
     return user;
   },
 
+  //
+  // UPDATE USER (name/email/role)
+  //
   async updateUser(id, updates) {
     delete updates.password;
 
@@ -57,6 +73,9 @@ export const userService = {
     return user;
   },
 
+  //
+  // UPDATE PASSWORD
+  //
   async updatePassword(id, password, newPassword) {
     if (!password || !newPassword) {
       throw new Error("Current password and new password are required");
@@ -78,6 +97,9 @@ export const userService = {
     return { message: "Password updated successfully" };
   },
 
+  //
+  // DELETE USER (admin deletes another user)
+  //
   async deleteUser(adminId, userId, password) {
     if (!password) throw new Error("Password is required");
 
@@ -97,6 +119,9 @@ export const userService = {
     };
   },
 
+  //
+  // UPDATE ROLE
+  //
   async updateRole(id, role) {
     if (!["user", "admin"].includes(role)) {
       throw new Error("Invalid role");

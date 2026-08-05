@@ -30,8 +30,8 @@ export const userRepository = {
     return User.findByIdAndUpdate(id, { role }, { returnDocument: "after" });
   },
 
-  async login(email, password) {
-    return User.login(email, password);
+  async login(identifier, password) {
+    return User.login(identifier, password);
   },
 
   async signup(name, email, password, role) {

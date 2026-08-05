@@ -1,14 +1,43 @@
 import { userService } from "../services/userService.js";
 
+//
+// ─────────────────────────────────────────────
+//   LOGIN (identifier = name OR email)
+// ─────────────────────────────────────────────
+//
 export async function loginUser(req, res) {
   try {
-    const result = await userService.login(req.body.email, req.body.password);
+    const { identifier, password } = req.body;
+
+    if (!identifier || !password) {
+      return res.status(400).json({
+        message: "Validation faileds",
+        errors: ["Name or email required", "Password required"],
+      });
+    }
+
+    // User.login (via the service/repository) already handles
+    // determining whether the identifier is an email or a name,
+    // so we just forward the raw string.
+    const result = await userService.login(identifier, password);
     res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    const status =
+      error.message === "User not found"
+        ? 404
+        : error.message === "Invalid credentials"
+          ? 401
+          : 500;
+
+    res.status(status).json({ error: error.message });
   }
 }
 
+//
+// ─────────────────────────────────────────────
+//   SIGNUP
+// ─────────────────────────────────────────────
+//
 export async function signupUser(req, res) {
   try {
     const { name, email, password, role } = req.body;
@@ -19,6 +48,11 @@ export async function signupUser(req, res) {
   }
 }
 
+//
+// ─────────────────────────────────────────────
+//   GET ALL USERS
+// ─────────────────────────────────────────────
+//
 export async function getUsers(req, res) {
   try {
     const users = await userService.getUsers();
@@ -28,6 +62,11 @@ export async function getUsers(req, res) {
   }
 }
 
+//
+// ─────────────────────────────────────────────
+//   GET USER BY ID
+// ─────────────────────────────────────────────
+//
 export async function getUser(req, res) {
   try {
     const user = await userService.getUser(req.params.id);
@@ -41,6 +80,11 @@ export async function getUser(req, res) {
   }
 }
 
+//
+// ─────────────────────────────────────────────
+//   UPDATE USER
+// ─────────────────────────────────────────────
+//
 export async function updateUser(req, res) {
   try {
     const updated = await userService.updateUser(req.params.id, req.body);
@@ -54,6 +98,11 @@ export async function updateUser(req, res) {
   }
 }
 
+//
+// ─────────────────────────────────────────────
+//   UPDATE PASSWORD
+// ─────────────────────────────────────────────
+//
 export async function updateUserPassword(req, res) {
   try {
     const { password, newPassword } = req.body;
@@ -69,6 +118,7 @@ export async function updateUserPassword(req, res) {
       password,
       newPassword,
     );
+
     res.status(200).json(result);
   } catch (error) {
     const status = error.message.includes("required")
@@ -85,6 +135,11 @@ export async function updateUserPassword(req, res) {
   }
 }
 
+//
+// ─────────────────────────────────────────────
+//   DELETE USER
+// ─────────────────────────────────────────────
+//
 export async function deleteUser(req, res) {
   try {
     const result = await userService.deleteUser(
@@ -111,6 +166,11 @@ export async function deleteUser(req, res) {
   }
 }
 
+//
+// ─────────────────────────────────────────────
+//   UPDATE ROLE
+// ─────────────────────────────────────────────
+//
 export async function updateUserRole(req, res) {
   try {
     const updated = await userService.updateRole(req.params.id, req.body.role);

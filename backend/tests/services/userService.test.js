@@ -56,9 +56,9 @@ describe("User Service (Success + Edge Cases)", () => {
   beforeEach(() => jest.clearAllMocks());
 
   // ============================================================================
-  // LOGIN
+  // LOGIN (name OR email)
   // ============================================================================
-  test("login → success", async () => {
+  test("login → success using email", async () => {
     userRepository.login.mockResolvedValue({
       _id: "123",
       name: "Kostas",
@@ -72,6 +72,22 @@ describe("User Service (Success + Edge Cases)", () => {
 
     expect(result.token).toBe("token123");
     expect(result.user.id).toBe("123");
+  });
+
+  test("login → success using name", async () => {
+    userRepository.login.mockResolvedValue({
+      _id: "123",
+      name: "Kostas",
+      email: "a@a.com",
+      role: "user",
+    });
+
+    jwt.sign.mockReturnValue("token123");
+
+    const result = await userService.login("Kostas", "123");
+
+    expect(result.user.name).toBe("Kostas");
+    expect(result.token).toBe("token123");
   });
 
   test("login → error", async () => {

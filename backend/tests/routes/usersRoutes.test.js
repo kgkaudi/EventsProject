@@ -80,7 +80,7 @@ describe("Users Routes (Success + Edge Cases)", () => {
 
     const res = await request(app)
       .post("/users/login")
-      .send({ email: "test@test.com", password: "123456" });
+      .send({ identifier: "test@test.com", password: "123456" });
 
     expect(res.status).toBe(200);
     expect(usersController.loginUser).toHaveBeenCalled();
@@ -98,7 +98,7 @@ describe("Users Routes (Success + Edge Cases)", () => {
 
     const res = await request(app)
       .post("/users/login")
-      .send({ email: "a@a.com", password: "123456" });
+      .send({ identifier: "a@a.com", password: "123456" });
 
     expect(res.status).toBe(500);
     expect(res.body.error).toMatch(/login error/i);
@@ -134,8 +134,8 @@ describe("Users Routes (Success + Edge Cases)", () => {
       .post("/users/signup")
       .send({ email: "a@a.com", password: "123456" });
 
-    expect(res.status).toBe(500);
-    expect(res.body.error).toMatch(/signup error/i);
+    expect(res.status).toBe(400);
+    expect(res.body.errors).toContain("Invalid name");
   });
 
   // ============================================================================
@@ -256,9 +256,7 @@ describe("Users Routes (Success + Edge Cases)", () => {
   });
 
   test("PUT /users/change-password/:id → 400 invalid data", async () => {
-    const res = await request(app)
-      .put("/users/change-password/123")
-      .send({});
+    const res = await request(app).put("/users/change-password/123").send({});
 
     expect(res.status).toBe(400);
   });

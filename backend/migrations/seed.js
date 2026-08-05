@@ -25,10 +25,10 @@ async function runSeed() {
     let admin = await User.findOne({ email: adminEmail });
 
     if (!admin) {
-      const hashed = await bcrypt.hash("Admin123!", 10);
+      const hashed = await bcrypt.hash("Ectoras01!", 10);
 
       admin = await User.create({
-        name: "Admin User",
+        name: "admin",
         email: adminEmail,
         password: hashed,
         role: "admin",

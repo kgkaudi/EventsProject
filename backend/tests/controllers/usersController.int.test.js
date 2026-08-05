@@ -1,55 +1,28 @@
 import { jest } from "@jest/globals";
 
 // -------------------------------------------------------
-// 1. Mock dependencies BEFORE importing controller
+// 1. Mock the service layer BEFORE importing the controller
 // -------------------------------------------------------
-jest.unstable_mockModule("../../src/models/User.js", () => ({
-  default: {
+jest.unstable_mockModule("../../src/services/userService.js", () => ({
+  userService: {
     login: jest.fn(),
     signup: jest.fn(),
-    find: jest.fn(),
-    findById: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
-    findByIdAndDelete: jest.fn(),
-  },
-}));
-
-jest.unstable_mockModule("../../src/models/Event.js", () => ({
-  default: {
-    deleteMany: jest.fn(),
-  },
-}));
-
-jest.unstable_mockModule("bcryptjs", () => ({
-  default: {
-    compare: jest.fn(),
-    hash: jest.fn(),
-  },
-}));
-
-jest.unstable_mockModule("validator", () => ({
-  default: {
-    isStrongPassword: jest.fn(),
-  },
-}));
-
-jest.unstable_mockModule("jsonwebtoken", () => ({
-  default: {
-    sign: jest.fn(),
+    getUsers: jest.fn(),
+    getUser: jest.fn(),
+    updateUser: jest.fn(),
+    updatePassword: jest.fn(),
+    deleteUser: jest.fn(),
+    updateRole: jest.fn(),
   },
 }));
 
 // -------------------------------------------------------
-// 2. Import mocks
+// 2. Import the mock
 // -------------------------------------------------------
-const User = (await import("../../src/models/User.js")).default;
-const Event = (await import("../../src/models/Event.js")).default;
-const bcrypt = (await import("bcryptjs")).default;
-const validator = (await import("validator")).default;
-const jwt = (await import("jsonwebtoken")).default;
+const { userService } = await import("../../src/services/userService.js");
 
 // -------------------------------------------------------
-// 3. Import controller AFTER mocks
+// 3. Import the controller AFTER the mock is registered
 // -------------------------------------------------------
 const usersController =
   await import("../../src/controllers/usersController.js");
@@ -70,417 +43,511 @@ describe("usersController Unit Tests (Success + Edge Cases)", () => {
   // ============================================================================
   // LOGIN USER
   // ============================================================================
-  test("loginUser → success", async () => {
-    const req = { body: { email: "a@a.com", password: "123" } };
-    const res = mockResponse();
+  describe("loginUser", () => {
+    test("missing identifier or password → 400", async () => {
+      const req = { body: { password: "123" } };
+      const res = mockResponse();
 
-    User.login.mockResolvedValue({
-      _id: "123",
-      name: "Kostas",
-      email: "a@a.com",
-      role: "user",
+      await usersController.loginUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(userService.login).not.toHaveBeenCalled();
     });
 
-    jwt.sign.mockReturnValue("token123");
+    test("identifier is an email → forwarded as-is to the service", async () => {
+      const req = { body: { identifier: "a@a.com", password: "123" } };
+      const res = mockResponse();
 
-    await usersController.loginUser(req, res);
+      userService.login.mockResolvedValue({ token: "token123", user: { id: "123" } });
 
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        token: "token123",
-        user: expect.objectContaining({ id: "123" }),
-      }),
-    );
-  });
+      await usersController.loginUser(req, res);
 
-  test("loginUser → error thrown", async () => {
-    const req = { body: { email: "a@a.com", password: "123" } };
-    const res = mockResponse();
+      // User.login (inside the service/repository) already handles
+      // deciding whether the identifier is an email or a name, so the
+      // controller just forwards the raw string.
+      expect(userService.login).toHaveBeenCalledWith("a@a.com", "123");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ token: "token123", user: { id: "123" } });
+    });
 
-    User.login.mockRejectedValue(new Error("Login failed"));
+    test("identifier is a username → forwarded as-is to the service", async () => {
+      const req = { body: { identifier: "Kostas", password: "123" } };
+      const res = mockResponse();
 
-    await usersController.loginUser(req, res);
+      userService.login.mockResolvedValue({ token: "token123", user: { id: "123" } });
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: "Login failed" });
+      await usersController.loginUser(req, res);
+
+      expect(userService.login).toHaveBeenCalledWith("Kostas", "123");
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test("user not found → 404", async () => {
+      const req = { body: { identifier: "a@a.com", password: "123" } };
+      const res = mockResponse();
+
+      userService.login.mockRejectedValue(new Error("User not found"));
+
+      await usersController.loginUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ error: "User not found" });
+    });
+
+    test("invalid credentials → 401", async () => {
+      const req = { body: { identifier: "a@a.com", password: "wrong" } };
+      const res = mockResponse();
+
+      userService.login.mockRejectedValue(new Error("Invalid credentials"));
+
+      await usersController.loginUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: "Invalid credentials" });
+    });
+
+    test("unexpected error → 500", async () => {
+      const req = { body: { identifier: "a@a.com", password: "123" } };
+      const res = mockResponse();
+
+      userService.login.mockRejectedValue(new Error("DB exploded"));
+
+      await usersController.loginUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: "DB exploded" });
+    });
   });
 
   // ============================================================================
   // SIGNUP USER
   // ============================================================================
-  test("signupUser → success", async () => {
-    const req = {
-      body: {
-        name: "Kostas",
-        email: "a@a.com",
-        password: "StrongPass123!",
-        role: "user",
-      },
-    };
-    const res = mockResponse();
+  describe("signupUser", () => {
+    test("success → 201", async () => {
+      const req = {
+        body: {
+          name: "Kostas",
+          email: "a@a.com",
+          password: "StrongPass123!",
+          role: "user",
+        },
+      };
+      const res = mockResponse();
 
-    User.signup.mockResolvedValue({
-      _id: "123",
-      name: "Kostas",
-      email: "a@a.com",
-      role: "user",
+      userService.signup.mockResolvedValue({ token: "token123", user: { id: "123" } });
+
+      await usersController.signupUser(req, res);
+
+      expect(userService.signup).toHaveBeenCalledWith(
+        "Kostas",
+        "a@a.com",
+        "StrongPass123!",
+        "user",
+      );
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith({ token: "token123", user: { id: "123" } });
     });
 
-    jwt.sign.mockReturnValue("token123");
+    test("error thrown → 500", async () => {
+      const req = { body: {} };
+      const res = mockResponse();
 
-    await usersController.signupUser(req, res);
+      userService.signup.mockRejectedValue(new Error("Signup failed"));
 
-    expect(res.status).toHaveBeenCalledWith(201);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        token: "token123",
-        user: expect.objectContaining({ id: "123" }),
-      }),
-    );
-  });
+      await usersController.signupUser(req, res);
 
-  test("signupUser → error thrown", async () => {
-    const req = { body: {} };
-    const res = mockResponse();
-
-    User.signup.mockRejectedValue(new Error("Signup failed"));
-
-    await usersController.signupUser(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: "Signup failed" });
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: "Signup failed" });
+    });
   });
 
   // ============================================================================
   // GET USERS
   // ============================================================================
-  test("getUsers → success", async () => {
-    const req = {};
-    const res = mockResponse();
+  describe("getUsers", () => {
+    test("success → 200", async () => {
+      const req = {};
+      const res = mockResponse();
 
-    User.find.mockReturnValue({
-      sort: jest.fn().mockResolvedValue([{ name: "Kostas" }]),
+      userService.getUsers.mockResolvedValue([{ name: "Kostas" }]);
+
+      await usersController.getUsers(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith([{ name: "Kostas" }]);
     });
 
-    await usersController.getUsers(req, res);
+    test("service error → 500 with generic message", async () => {
+      const req = {};
+      const res = mockResponse();
 
-    expect(res.status).toHaveBeenCalledWith(200);
-  });
+      userService.getUsers.mockRejectedValue(new Error("DB error"));
 
-  test("getUsers → DB error", async () => {
-    const req = {};
-    const res = mockResponse();
+      await usersController.getUsers(req, res);
 
-    User.find.mockReturnValue({
-      sort: jest.fn().mockRejectedValue(new Error("DB error")),
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ message: "Internal server error" });
     });
-
-    await usersController.getUsers(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ message: "Internal server error" });
   });
 
   // ============================================================================
   // GET USER BY ID
   // ============================================================================
-  test("getUser → success", async () => {
-    const req = { params: { id: "123" } };
-    const res = mockResponse();
+  describe("getUser", () => {
+    test("success → 200", async () => {
+      const req = { params: { id: "123" } };
+      const res = mockResponse();
 
-    User.findById.mockResolvedValue({ name: "Kostas" });
+      userService.getUser.mockResolvedValue({ name: "Kostas" });
 
-    await usersController.getUser(req, res);
+      await usersController.getUser(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(200);
-  });
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({ name: "Kostas" });
+    });
 
-  test("getUser → not found", async () => {
-    const req = { params: { id: "123" } };
-    const res = mockResponse();
+    test("not found → 404", async () => {
+      const req = { params: { id: "123" } };
+      const res = mockResponse();
 
-    User.findById.mockResolvedValue(null);
+      userService.getUser.mockRejectedValue(new Error("User not found"));
 
-    await usersController.getUser(req, res);
+      await usersController.getUser(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(404);
-  });
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
 
-  test("getUser → invalid ID (CastError)", async () => {
-    const req = { params: { id: "bad" } };
-    const res = mockResponse();
+    test("invalid ID (CastError) → 500", async () => {
+      const req = { params: { id: "bad" } };
+      const res = mockResponse();
 
-    const err = new Error("Bad ID");
-    err.name = "CastError";
+      const err = new Error("Bad ID");
+      err.name = "CastError";
+      userService.getUser.mockRejectedValue(err);
 
-    User.findById.mockRejectedValue(err);
+      await usersController.getUser(req, res);
 
-    await usersController.getUser(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
 
-    expect(res.status).toHaveBeenCalledWith(500);
-  });
+    test("server error → 500", async () => {
+      const req = { params: { id: "123" } };
+      const res = mockResponse();
 
-  test("getUser → server error", async () => {
-    const req = { params: { id: "123" } };
-    const res = mockResponse();
+      userService.getUser.mockRejectedValue(new Error("DB error"));
 
-    User.findById.mockRejectedValue(new Error("DB error"));
+      await usersController.getUser(req, res);
 
-    await usersController.getUser(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
   });
 
   // ============================================================================
   // UPDATE USER
   // ============================================================================
-  test("updateUser → success", async () => {
-    const req = { params: { id: "123" }, body: { name: "New" } };
-    const res = mockResponse();
+  describe("updateUser", () => {
+    test("success → 200", async () => {
+      const req = { params: { id: "123" }, body: { name: "New" } };
+      const res = mockResponse();
 
-    User.findByIdAndUpdate.mockResolvedValue({ name: "New" });
+      userService.updateUser.mockResolvedValue({ name: "New" });
 
-    await usersController.updateUser(req, res);
+      await usersController.updateUser(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(200);
-  });
+      expect(userService.updateUser).toHaveBeenCalledWith("123", { name: "New" });
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
 
-  test("updateUser → not found", async () => {
-    const req = { params: { id: "123" }, body: {} };
-    const res = mockResponse();
+    test("not found → 404", async () => {
+      const req = { params: { id: "123" }, body: {} };
+      const res = mockResponse();
 
-    User.findByIdAndUpdate.mockResolvedValue(null);
+      userService.updateUser.mockRejectedValue(new Error("User not found"));
 
-    await usersController.updateUser(req, res);
+      await usersController.updateUser(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(404);
-  });
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
 
-  test("updateUser → invalid ID", async () => {
-    const req = { params: { id: "bad" }, body: {} };
-    const res = mockResponse();
+    test("invalid ID (CastError) → 500", async () => {
+      const req = { params: { id: "bad" }, body: {} };
+      const res = mockResponse();
 
-    const err = new Error("Bad ID");
-    err.name = "CastError";
+      const err = new Error("Bad ID");
+      err.name = "CastError";
+      userService.updateUser.mockRejectedValue(err);
 
-    User.findByIdAndUpdate.mockRejectedValue(err);
+      await usersController.updateUser(req, res);
 
-    await usersController.updateUser(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
 
-    expect(res.status).toHaveBeenCalledWith(500);
-  });
+    test("server error → 500", async () => {
+      const req = { params: { id: "123" }, body: {} };
+      const res = mockResponse();
 
-  test("updateUser → server error", async () => {
-    const req = { params: { id: "123" }, body: {} };
-    const res = mockResponse();
+      userService.updateUser.mockRejectedValue(new Error("DB error"));
 
-    User.findByIdAndUpdate.mockRejectedValue(new Error("DB error"));
+      await usersController.updateUser(req, res);
 
-    await usersController.updateUser(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
   });
 
   // ============================================================================
   // UPDATE USER PASSWORD
   // ============================================================================
-  test("updateUserPassword → missing fields", async () => {
-    const req = { params: { id: "123" }, body: {} };
-    const res = mockResponse();
+  describe("updateUserPassword", () => {
+    test("missing fields → 400", async () => {
+      const req = { params: { id: "123" }, body: {} };
+      const res = mockResponse();
 
-    await usersController.updateUserPassword(req, res);
+      await usersController.updateUserPassword(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-  });
-
-  test("updateUserPassword → weak password", async () => {
-    const req = {
-      params: { id: "123" },
-      body: { password: "old", newPassword: "weak" },
-    };
-    const res = mockResponse();
-
-    validator.isStrongPassword.mockReturnValue(false);
-
-    await usersController.updateUserPassword(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-  });
-
-  test("updateUserPassword → user not found", async () => {
-    const req = {
-      params: { id: "123" },
-      body: { password: "old", newPassword: "StrongPass123!" },
-    };
-    const res = mockResponse();
-
-    validator.isStrongPassword.mockReturnValue(true);
-    User.findById.mockResolvedValue(null);
-
-    await usersController.updateUserPassword(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(404);
-  });
-
-  test("updateUserPassword → wrong current password", async () => {
-    const req = {
-      params: { id: "123" },
-      body: { password: "wrong", newPassword: "StrongPass123!" },
-    };
-    const res = mockResponse();
-
-    validator.isStrongPassword.mockReturnValue(true);
-    User.findById.mockResolvedValue({ password: "hashed" });
-    bcrypt.compare.mockResolvedValue(false);
-
-    await usersController.updateUserPassword(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(401);
-  });
-
-  test("updateUserPassword → success", async () => {
-    const req = {
-      params: { id: "123" },
-      body: { password: "old", newPassword: "StrongPass123!" },
-    };
-    const res = mockResponse();
-
-    validator.isStrongPassword.mockReturnValue(true);
-    User.findById.mockResolvedValue({
-      password: "hashed",
-      save: jest.fn(),
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(userService.updatePassword).not.toHaveBeenCalled();
     });
-    bcrypt.compare.mockResolvedValue(true);
-    bcrypt.hash.mockResolvedValue("newhash");
 
-    await usersController.updateUserPassword(req, res);
+    test("service reports missing field ('required') → 400", async () => {
+      const req = {
+        params: { id: "123" },
+        body: { password: "old", newPassword: "new" },
+      };
+      const res = mockResponse();
 
-    expect(res.status).toHaveBeenCalledWith(200);
+      userService.updatePassword.mockRejectedValue(
+        new Error("Current password and new password are required"),
+      );
+
+      await usersController.updateUserPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    test("weak new password ('strong') → 400", async () => {
+      const req = {
+        params: { id: "123" },
+        body: { password: "old", newPassword: "weak" },
+      };
+      const res = mockResponse();
+
+      userService.updatePassword.mockRejectedValue(
+        new Error("New Password is not strong enough"),
+      );
+
+      await usersController.updateUserPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    test("incorrect current password ('Incorrect') → 401", async () => {
+      const req = {
+        params: { id: "123" },
+        body: { password: "wrong", newPassword: "StrongPass123!" },
+      };
+      const res = mockResponse();
+
+      userService.updatePassword.mockRejectedValue(
+        new Error("Incorrect current password"),
+      );
+
+      await usersController.updateUserPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+    });
+
+    test("user not found → 404", async () => {
+      const req = {
+        params: { id: "123" },
+        body: { password: "old", newPassword: "StrongPass123!" },
+      };
+      const res = mockResponse();
+
+      userService.updatePassword.mockRejectedValue(new Error("User not found"));
+
+      await usersController.updateUserPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    test("success → 200", async () => {
+      const req = {
+        params: { id: "123" },
+        body: { password: "old", newPassword: "StrongPass123!" },
+      };
+      const res = mockResponse();
+
+      userService.updatePassword.mockResolvedValue({ message: "Password updated" });
+
+      await usersController.updateUserPassword(req, res);
+
+      expect(userService.updatePassword).toHaveBeenCalledWith(
+        "123",
+        "old",
+        "StrongPass123!",
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test("unexpected error → 500", async () => {
+      const req = {
+        params: { id: "123" },
+        body: { password: "old", newPassword: "StrongPass123!" },
+      };
+      const res = mockResponse();
+
+      userService.updatePassword.mockRejectedValue(new Error("DB exploded"));
+
+      await usersController.updateUserPassword(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
   });
 
   // ============================================================================
   // DELETE USER
   // ============================================================================
-  test("deleteUser → missing password", async () => {
-    const req = { params: { id: "123" }, body: {}, user: { _id: "admin" } };
-    const res = mockResponse();
+  describe("deleteUser", () => {
+    test("password required → 500 (per controller mapping)", async () => {
+      const req = { params: { id: "123" }, body: {}, user: { _id: "admin" } };
+      const res = mockResponse();
 
-    await usersController.deleteUser(req, res);
+      userService.deleteUser.mockRejectedValue(
+        new Error("Password is required"),
+      );
 
-    expect(res.status).toHaveBeenCalledWith(500);
-  });
+      await usersController.deleteUser(req, res);
 
-  test("deleteUser → admin not found", async () => {
-    const req = {
-      params: { id: "123" },
-      body: { password: "pass" },
-      user: { _id: "admin" },
-    };
-    const res = mockResponse();
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
 
-    User.findById.mockResolvedValue(null);
+    test("unauthorized → 401", async () => {
+      const req = {
+        params: { id: "123" },
+        body: { password: "pass" },
+        user: { _id: "admin" },
+      };
+      const res = mockResponse();
 
-    await usersController.deleteUser(req, res);
+      userService.deleteUser.mockRejectedValue(new Error("Unauthorized"));
 
-    expect(res.status).toHaveBeenCalledWith(401);
-  });
+      await usersController.deleteUser(req, res);
 
-  test("deleteUser → wrong admin password", async () => {
-    const req = {
-      params: { id: "123" },
-      body: { password: "wrong" },
-      user: { _id: "admin" },
-    };
-    const res = mockResponse();
+      expect(res.status).toHaveBeenCalledWith(401);
+    });
 
-    User.findById.mockResolvedValue({ password: "hashed" });
-    bcrypt.compare.mockResolvedValue(false);
+    test("incorrect password → 400", async () => {
+      const req = {
+        params: { id: "123" },
+        body: { password: "wrong" },
+        user: { _id: "admin" },
+      };
+      const res = mockResponse();
 
-    await usersController.deleteUser(req, res);
+      userService.deleteUser.mockRejectedValue(new Error("Incorrect password"));
 
-    expect(res.status).toHaveBeenCalledWith(400);
-  });
+      await usersController.deleteUser(req, res);
 
-  test("deleteUser → user not found", async () => {
-    const req = {
-      params: { id: "123" },
-      body: { password: "pass" },
-      user: { _id: "admin" },
-    };
-    const res = mockResponse();
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
 
-    User.findById.mockResolvedValue({ password: "hashed" });
-    bcrypt.compare.mockResolvedValue(true);
-    User.findByIdAndDelete.mockResolvedValue(null);
+    test("user not found → 404", async () => {
+      const req = {
+        params: { id: "123" },
+        body: { password: "pass" },
+        user: { _id: "admin" },
+      };
+      const res = mockResponse();
 
-    await usersController.deleteUser(req, res);
+      userService.deleteUser.mockRejectedValue(new Error("User not found"));
 
-    expect(res.status).toHaveBeenCalledWith(404);
-  });
+      await usersController.deleteUser(req, res);
 
-  test("deleteUser → success", async () => {
-    const req = {
-      params: { id: "123" },
-      body: { password: "pass" },
-      user: { _id: "admin" },
-    };
-    const res = mockResponse();
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
 
-    User.findById.mockResolvedValue({ password: "hashed" });
-    bcrypt.compare.mockResolvedValue(true);
-    User.findByIdAndDelete.mockResolvedValue({ _id: "123" });
-    Event.deleteMany.mockResolvedValue({});
+    test("success → 200", async () => {
+      const req = {
+        params: { id: "123" },
+        body: { password: "pass" },
+        user: { _id: "admin" },
+      };
+      const res = mockResponse();
 
-    await usersController.deleteUser(req, res);
+      userService.deleteUser.mockResolvedValue({ message: "User deleted" });
 
-    expect(res.status).toHaveBeenCalledWith(200);
+      await usersController.deleteUser(req, res);
+
+      expect(userService.deleteUser).toHaveBeenCalledWith("admin", "123", "pass");
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    test("unexpected error → 500", async () => {
+      const req = {
+        params: { id: "123" },
+        body: { password: "pass" },
+        user: { _id: "admin" },
+      };
+      const res = mockResponse();
+
+      userService.deleteUser.mockRejectedValue(new Error("DB exploded"));
+
+      await usersController.deleteUser(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
   });
 
   // ============================================================================
   // UPDATE USER ROLE
   // ============================================================================
-  test("updateUserRole → invalid role", async () => {
-    const req = { params: { id: "123" }, body: { role: "invalid" } };
-    const res = mockResponse();
+  describe("updateUserRole", () => {
+    test("invalid role → 400", async () => {
+      const req = { params: { id: "123" }, body: { role: "invalid" } };
+      const res = mockResponse();
 
-    await usersController.updateUserRole(req, res);
+      userService.updateRole.mockRejectedValue(new Error("Invalid role"));
 
-    expect(res.status).toHaveBeenCalledWith(400);
-  });
+      await usersController.updateUserRole(req, res);
 
-  test("updateUserRole → not found", async () => {
-    const req = { params: { id: "123" }, body: { role: "admin" } };
-    const res = mockResponse();
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
 
-    User.findByIdAndUpdate.mockResolvedValue(null);
+    test("not found → 404", async () => {
+      const req = { params: { id: "123" }, body: { role: "admin" } };
+      const res = mockResponse();
 
-    await usersController.updateUserRole(req, res);
+      userService.updateRole.mockRejectedValue(new Error("User not found"));
 
-    expect(res.status).toHaveBeenCalledWith(404);
-  });
+      await usersController.updateUserRole(req, res);
 
-  test("updateUserRole → success", async () => {
-    const req = { params: { id: "123" }, body: { role: "admin" } };
-    const res = mockResponse();
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
 
-    User.findByIdAndUpdate.mockResolvedValue({ _id: "123", role: "admin" });
+    test("success → 200", async () => {
+      const req = { params: { id: "123" }, body: { role: "admin" } };
+      const res = mockResponse();
 
-    await usersController.updateUserRole(req, res);
+      userService.updateRole.mockResolvedValue({ _id: "123", role: "admin" });
 
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ role: "admin" }),
-    );
-  });
+      await usersController.updateUserRole(req, res);
 
-  test("updateUserRole → server error", async () => {
-    const req = { params: { id: "123" }, body: { role: "admin" } };
-    const res = mockResponse();
+      expect(userService.updateRole).toHaveBeenCalledWith("123", "admin");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ role: "admin" }),
+      );
+    });
 
-    User.findByIdAndUpdate.mockRejectedValue(new Error("DB error"));
+    test("server error → 500", async () => {
+      const req = { params: { id: "123" }, body: { role: "admin" } };
+      const res = mockResponse();
 
-    await usersController.updateUserRole(req, res);
+      userService.updateRole.mockRejectedValue(new Error("DB error"));
 
-    expect(res.status).toHaveBeenCalledWith(500);
+      await usersController.updateUserRole(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
   });
 });

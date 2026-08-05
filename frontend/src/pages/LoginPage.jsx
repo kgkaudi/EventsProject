@@ -13,25 +13,25 @@ const LoginPage = () => {
 
   const { loading, error } = useSelector((state) => state.auth);
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = (e) => {
     e.preventDefault();
 
-    if (!email.trim() || !password.trim()) {
+    if (!identifier.trim() || !password.trim()) {
       toast.error("All fields are required");
       return;
     }
 
-    dispatch(loginUser({ email, password }))
+    dispatch(loginUser({ identifier, password }))
       .unwrap()
       .then(() => {
         toast.success("User logged in successfully!");
         navigate("/");
       })
       .catch((err) => {
-        toast.error(err);
+        toast.error(err || "Login failed");
       });
   };
 
@@ -51,14 +51,14 @@ const LoginPage = () => {
               <form onSubmit={handleLogin}>
                 <div className="form-control mb-4">
                   <label className="label">
-                    <span className="label-text">Email</span>
+                    <span className="label-text">Email or Username</span>
                   </label>
                   <input
-                    type="email"
-                    placeholder="Email"
+                    type="text"
+                    placeholder="Email or Username"
                     className="input input-bordered"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
                   />
                 </div>
 

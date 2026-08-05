@@ -1,6 +1,7 @@
 import { userRepository } from "../../src/repositories/userRepository.js";
 import User from "../../src/models/User.js";
 import Event from "../../src/models/Event.js";
+import bcrypt from "bcryptjs";
 
 describe("User Repository", () => {
   beforeEach(async () => {
@@ -24,7 +25,7 @@ describe("User Repository", () => {
   });
 
   test("findById → not found", async () => {
-    const id = new User()._id; // valid ObjectId
+    const id = new User()._id;
     const found = await userRepository.findById(id);
     expect(found).toBeNull();
   });
@@ -46,7 +47,7 @@ describe("User Repository", () => {
 
     const users = await userRepository.findAll();
 
-    expect(users[0]._id.toString()).toBe(u2._id.toString()); // newest first
+    expect(users[0]._id.toString()).toBe(u2._id.toString());
     expect(users[1]._id.toString()).toBe(u1._id.toString());
   });
 
@@ -141,5 +142,64 @@ describe("User Repository", () => {
     await expect(
       userRepository.deleteUserEvents(user._id),
     ).resolves.not.toThrow();
+  });
+
+  // ============================================================================
+  // LOGIN (name OR email)
+  // ============================================================================
+  test("login → success using email", async () => {
+    const hashed = await bcrypt.hash("123456", 10);
+
+    await User.create({
+      name: "LoginUser",
+      email: "login@test.com",
+      password: hashed,
+    });
+
+    const user = await userRepository.login("login@test.com", "123456");
+
+    expect(user.email).toBe("login@test.com");
+  });
+
+  test("login → success using name", async () => {
+    const hashed = await bcrypt.hash("123456", 10);
+
+    await User.create({
+      name: "LoginName",
+      email: "name@test.com",
+      password: hashed,
+    });
+
+    const user = await userRepository.login("LoginName", "123456");
+
+    expect(user.name).toBe("LoginName");
+  });
+
+  test("login → incorrect identifier throws", async () => {
+    const hashed = await bcrypt.hash("123456", 10);
+
+    await User.create({
+      name: "UserX",
+      email: "x@test.com",
+      password: hashed,
+    });
+
+    await expect(
+      userRepository.login("WrongName", "123456"),
+    ).rejects.toThrow("Incorrect name or email");
+  });
+
+  test("login → incorrect password throws", async () => {
+    const hashed = await bcrypt.hash("123456", 10);
+
+    await User.create({
+      name: "UserY",
+      email: "y@test.com",
+      password: hashed,
+    });
+
+    await expect(
+      userRepository.login("UserY", "wrongpass"),
+    ).rejects.toThrow("Incorrect password");
   });
 });
