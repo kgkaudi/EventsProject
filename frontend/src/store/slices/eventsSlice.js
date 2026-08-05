@@ -10,7 +10,7 @@ export const fetchEventById = createAsyncThunk(
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data || err.message);
     }
-  }
+  },
 );
 
 export const createEvent = createAsyncThunk(
@@ -22,7 +22,7 @@ export const createEvent = createAsyncThunk(
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data || err.message);
     }
-  }
+  },
 );
 
 export const updateEvent = createAsyncThunk(
@@ -34,7 +34,7 @@ export const updateEvent = createAsyncThunk(
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data || err.message);
     }
-  }
+  },
 );
 
 export const fetchEvents = createAsyncThunk(
@@ -46,7 +46,7 @@ export const fetchEvents = createAsyncThunk(
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data || err.message);
     }
-  }
+  },
 );
 
 export const fetchAnalytics = createAsyncThunk(
@@ -58,7 +58,7 @@ export const fetchAnalytics = createAsyncThunk(
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data || err.message);
     }
-  }
+  },
 );
 
 const eventsSlice = createSlice({
@@ -119,7 +119,12 @@ const eventsSlice = createSlice({
       .addCase(fetchEvents.fulfilled, (state, action) => {
         const { events, hasMore } = action.payload;
 
-        state.events = [...state.events, ...events];
+        if (action.meta.arg.page === 1) {
+          state.events = events;
+        } else {
+          state.events = [...state.events, ...events];
+        }
+
         state.hasMore = hasMore;
         state.loading = false;
         state.page += 1;
